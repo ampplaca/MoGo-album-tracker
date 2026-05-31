@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍩 Simpsons Go Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --yellow:#FED400;--yellow-dark:#E5B800;--yellow-light:#FFF5B0;
+  --blue:#1565C0;--blue-light:#E3F0FF;
+  --gold:#FFB300;--gold-bg:#FFF8E1;
+  --red:#C62828;--green:#2E7D32;
+  --bg:#FFFDE7;--card-bg:#fff;--border:#E0C400;
+  --text:#222;--text-muted:#888;
+  --progress-fill:#FED400;--progress-track:#F5F0C0;
+  --shadow:0 2px 8px rgba(0,0,0,0.10);
+}
+body.dark {
+  --bg:#1a1a0e;--card-bg:#232310;--border:#5a4e00;
+  --text:#f5f0c0;--text-muted:#aaa;
+  --blue-light:#0d2a4a;--yellow-light:#2a2500;
+  --gold-bg:#2a2000;--progress-track:#2a2500;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh;}
+
+/* AUTH SCREEN */
+.auth-screen{max-width:420px;margin:80px auto;padding:36px 28px;text-align:center;background:var(--card-bg);border:2px solid var(--border);border-radius:16px;box-shadow:var(--shadow);}
+.auth-screen h1{font-size:2rem;color:var(--yellow-dark);margin-bottom:6px;}
+.auth-screen p{color:var(--text-muted);margin-bottom:24px;font-size:.9rem;}
+.auth-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:1rem;margin-bottom:12px;}
+.btn-yellow{background:var(--yellow);color:#222;border:none;border-radius:9px;padding:11px 24px;font-weight:700;cursor:pointer;font-size:.95rem;width:100%;transition:background .15s;}
+.btn-yellow:hover{background:var(--yellow-dark);}
+.auth-msg{margin-top:14px;font-size:.85rem;color:var(--text-muted);}
+.auth-msg.success{color:var(--green);}
+.auth-msg.error{color:var(--red);}
+
+/* LOADING */
+.loading-screen{text-align:center;padding:80px 20px;color:var(--text-muted);}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--yellow-dark);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* HOME SCREEN */
+.home-screen{max-width:600px;margin:40px auto;padding:0 16px;}
+.home-screen h2{font-size:1.5rem;font-weight:700;margin-bottom:16px;color:var(--yellow-dark);}
+.user-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.user-card{background:var(--card-bg);border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .15s;}
+.user-card:hover{border-color:var(--yellow-dark);background:var(--yellow-light);}
+.user-card.mine{border-color:var(--yellow-dark);}
+.user-card-name{font-weight:700;font-size:1rem;margin-bottom:4px;}
+.user-card-meta{font-size:.78rem;color:var(--text-muted);}
+.user-card-badge{font-size:.68rem;background:var(--yellow);color:#222;border-radius:8px;padding:2px 7px;font-weight:700;display:inline-block;margin-top:4px;}
+
+/* TOP STRIP */
+.top-strip{background:var(--yellow);padding:10px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.12);position:sticky;top:0;z-index:100;}
+.app-title{font-weight:900;font-size:1.15rem;color:#222;}
+.viewing-as{font-size:.82rem;color:#333;}
+.readonly-badge{background:#C62828;color:#fff;font-size:.68rem;padding:2px 7px;border-radius:10px;margin-left:5px;font-weight:700;}
+.top-btns{display:flex;gap:7px;align-items:center;}
+.btn-sm-strip{background:#fff;border:2px solid #ccc;border-radius:7px;padding:5px 11px;cursor:pointer;font-size:.78rem;font-weight:600;}
+.btn-sm-strip:hover{border-color:#888;}
+
+/* SHEETS BAR */
+.sheets-bar{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--card-bg);border-bottom:2px solid var(--border);}
+.sheet-tab{padding:6px 14px;border-radius:20px;border:2px solid var(--border);background:var(--bg);cursor:pointer;font-size:.83rem;font-weight:600;white-space:nowrap;transition:all .15s;}
+.sheet-tab.active{background:var(--yellow);border-color:var(--yellow-dark);color:#222;}
+.sheet-tab-add{padding:6px 14px;border-radius:20px;border:2px dashed var(--border);background:transparent;cursor:pointer;font-size:.83rem;color:var(--text-muted);}
+.sheet-tab-add:hover{border-color:var(--yellow-dark);color:var(--yellow-dark);}
+
+/* TRACKER */
+.tracker-view{padding:14px;}
+.controls-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;}
+.left-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1;}
+.progress-wrap{display:flex;align-items:center;gap:8px;}
+.progress-track{width:150px;height:10px;background:var(--progress-track);border-radius:5px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--progress-fill);transition:width .3s;}
+.progress-label{font-size:.82rem;font-weight:700;color:var(--yellow-dark);}
+.vault-wrap{font-size:.82rem;color:var(--text-muted);}
+.vault-stars{font-weight:700;color:var(--gold);}
+.filters{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-item{font-size:.78rem;display:flex;align-items:center;gap:4px;cursor:pointer;}
+.right-bar{display:flex;gap:7px;flex-wrap:wrap;}
+.btn-sm{padding:5px 11px;border-radius:7px;border:2px solid var(--border);background:var(--card-bg);color:var(--text);cursor:pointer;font-size:.78rem;font-weight:600;}
+.btn-sm:hover{border-color:var(--yellow-dark);}
+.save-indicator{font-size:.75rem;color:var(--text-muted);font-style:italic;}
+.save-indicator.saving{color:var(--gold);}
+.save-indicator.saved{color:var(--green);}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid var(--border);}
+.tab-btn{padding:7px 14px;border:none;background:transparent;cursor:pointer;font-size:.86rem;font-weight:600;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;}
+.tab-btn.active{color:var(--yellow-dark);border-bottom-color:var(--yellow-dark);}
+
+/* SETS */
+.set-block{background:var(--card-bg);border:2px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.set-header{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.set-header:hover{background:var(--yellow-light);}
+.set-title{font-weight:700;font-size:.92rem;flex:1;}
+.set-prog-wrap{display:flex;align-items:center;gap:6px;}
+.set-prog-track{width:70px;height:6px;background:var(--progress-track);border-radius:3px;overflow:hidden;}
+.set-prog-fill{height:100%;background:var(--yellow);transition:width .3s;}
+.set-prog-label{font-size:.72rem;color:var(--text-muted);}
+.set-chevron{font-size:.78rem;color:var(--text-muted);transition:transform .2s;}
+.set-chevron.open{transform:rotate(90deg);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;padding:10px 14px 14px;}
+.card-item{border:2px solid var(--border);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;background:var(--bg);}
+.card-item.collected{background:var(--yellow-light);border-color:var(--yellow-dark);}
+.card-item.gold-card{border-color:var(--gold);background:var(--gold-bg);}
+.card-item.gold-card.collected{background:#FFE082;border-color:#E65100;}
+.card-item.readonly{cursor:default;}
+.card-name{font-size:.78rem;font-weight:600;line-height:1.2;margin-bottom:3px;}
+.card-stars{font-size:.7rem;color:var(--gold);}
+.card-dupe-row{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.dupe-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.dupe-btn:hover{border-color:var(--yellow-dark);}
+.dupe-count{font-size:.72rem;font-weight:700;color:var(--blue);min-width:14px;text-align:center;}
+.gold-badge{position:absolute;top:4px;right:4px;font-size:.58rem;background:var(--gold);color:#000;border-radius:4px;padding:1px 4px;font-weight:700;}
+.vault-badge{font-size:.65rem;color:var(--text-muted);}
+
+/* NEEDS / TRADE / COMPARE / SEARCH */
+.section-title{font-weight:700;font-size:1rem;margin-bottom:10px;}
+.needs-block{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.needs-tier{font-weight:700;font-size:.8rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;}
+.needs-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{padding:3px 9px;border-radius:12px;font-size:.76rem;border:1.5px solid var(--border);background:var(--bg);}
+.chip.gold-chip{border-color:var(--gold);background:var(--gold-bg);color:#7a4400;}
+.star-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.star-filter-btn{padding:4px 11px;border-radius:12px;border:2px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.78rem;font-weight:600;}
+.star-filter-btn.active{background:var(--yellow);border-color:var(--yellow-dark);}
+.trade-row{background:var(--card-bg);border:2px solid var(--border);border-radius:9px;padding:9px 14px;margin-bottom:7px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.search-input{width:100%;padding:9px 14px;border:2px solid var(--border);border-radius:9px;background:var(--card-bg);color:var(--text);font-size:.88rem;margin-bottom:12px;}
+.search-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.compare-area{display:flex;flex-direction:column;gap:10px;}
+.compare-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;}
+.compare-box textarea{width:100%;min-height:80px;border:1.5px solid var(--border);border-radius:7px;padding:8px;background:var(--bg);color:var(--text);font-size:.8rem;resize:vertical;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card-bg);border-radius:14px;padding:24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+.modal h2{margin-bottom:8px;font-size:1.05rem;}
+.modal p{font-size:.83rem;color:var(--text-muted);margin-bottom:10px;}
+.modal textarea{width:100%;min-height:90px;border:1.5px solid var(--border);border-radius:7px;padding:8px;background:var(--bg);color:var(--text);font-size:.8rem;resize:vertical;margin-bottom:10px;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-btn{padding:7px 16px;border-radius:7px;border:2px solid var(--border);background:var(--card-bg);cursor:pointer;font-weight:600;font-size:.83rem;}
+.modal-btn.primary{background:var(--yellow);border-color:var(--yellow-dark);}
+.modal-input{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:.9rem;margin-bottom:10px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:20px;font-size:.86rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;}
+.back-to-top{position:fixed;bottom:24px;right:20px;background:var(--yellow);border:none;border-radius:50%;width:40px;height:40px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow);display:none;z-index:150;}
+.back-to-top.visible{display:block;}
+.empty-msg{color:var(--text-muted);font-size:.83rem;padding:8px 0;}
+.divider{border:none;border-top:2px solid var(--border);}
+</style>
+</head>
+<body>
+
+<!-- MODALS -->
+<div class="modal-bg" id="sheet-name-modal">
+  <div class="modal">
+    <h2 id="sheet-modal-title">New Account Sheet</h2>
+    <input class="modal-input" id="sheet-name-input" placeholder="Account name..." maxlength="24" onkeydown="if(event.key==='Enter')confirmSheetName()">
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="confirmSheetName()">Save</button>
+      <button class="modal-btn" onclick="closeModal('sheet-name-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal">
+    <h2 id="confirm-title">Confirm</h2>
+    <p id="confirm-msg"></p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" id="confirm-ok">Yes</button>
+      <button class="modal-btn" onclick="closeModal('confirm-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none;">
+  <div class="auth-screen">
+    <h1>🍩 Simpsons Go</h1>
+    <p>Sign in with your email — we'll send you a magic link, no password needed!</p>
+    <input class="auth-input" id="auth-email" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
+    <button class="btn-yellow" onclick="sendMagicLink()">Send Magic Link</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen" class="loading-screen">
+  <div class="spinner"></div>
+  <div>Loading...</div>
+</div>
+
+<!-- HOME SCREEN -->
+<div id="home-screen" style="display:none;">
+  <div class="top-strip">
+    <span class="app-title">🍩 Simpsons Go Tracker</span>
+    <div class="top-btns">
+      <span id="home-user-email" style="font-size:.78rem;color:#333;"></span>
+      <button class="btn-sm-strip" onclick="toggleDark()" id="dark-toggle">🌙</button>
+      <button class="btn-sm-strip" onclick="signOut()">Sign Out</button>
+    </div>
+  </div>
+  <div class="home-screen">
+    <h2>👤 All Trackers</h2>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:16px;">Click anyone's tracker to view it. Only your own sheets are editable.</p>
+    <div class="user-cards-grid" id="user-cards-grid"></div>
+    <button class="btn-yellow" style="max-width:200px;" onclick="enterMyTracker()">Open My Tracker</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+  <div class="top-strip">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="app-title">🍩 Simpsons Go</span>
+      <span class="viewing-as" id="viewing-as-label"></span>
+      <span id="readonly-badge" class="readonly-badge" style="display:none;">read only</span>
+    </div>
+    <div class="top-btns">
+      <span class="save-indicator" id="save-indicator"></span>
+      <button class="btn-sm-strip" onclick="showHome()">← Home</button>
+      <button class="btn-sm-strip" onclick="toggleDark()" id="dark-toggle2">🌙</button>
+    </div>
+  </div>
+  <div class="sheets-bar" id="sheets-bar"></div>
+  <hr class="divider">
+  <div class="tracker-view">
+    <div class="controls-bar">
+      <div class="left-bar">
+        <div class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+          <span class="progress-label" id="prog-label">0 / 189</span>
+        </div>
+        <div class="vault-wrap">Vault: <span class="vault-stars" id="vault-stars">0</span>⭐</div>
+        <div class="filters">
+          <label class="filter-item"><input type="checkbox" id="f-uncollected" checked onchange="renderCollect()"> Missing</label>
+          <label class="filter-item"><input type="checkbox" id="f-collected" checked onchange="renderCollect()"> Collected</label>
+          <label class="filter-item"><input type="checkbox" id="f-dupes" onchange="renderCollect()"> Dupes only</label>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('collect',this)">Collect</button>
+      <button class="tab-btn" onclick="switchTab('needs',this)">Needs</button>
+      <button class="tab-btn" onclick="switchTab('trade',this)">Trade Helper</button>
+      <button class="tab-btn" onclick="switchTab('compare',this)">Compare</button>
+      <button class="tab-btn" onclick="switchTab('search',this)">Search</button>
+    </div>
+    <div id="tab-collect"></div>
+    <div id="tab-needs" style="display:none;"></div>
+    <div id="tab-trade" style="display:none;"></div>
+    <div id="tab-compare" style="display:none;"></div>
+    <div id="tab-search" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──
+const SUPA_URL = 'https://nklxbueibntlpwfsglpm.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── CARD DATA ──
+const SETS = [
+  {name:"The Simpsons", cards:[["Marge",1,false],["Bart",1,false],["Lisa",1,false],["Patty & Selma",1,false],["Homer",1,false],["Maggie",1,false],["Santa's Little Helper",1,false],["Snowball 2",1,false],["Grampa",1,false]]},
+  {name:"Monopoly's Training Day", cards:[["Weee!",1,false],["Payday",1,false],["Naptime",1,false],["Break Time",1,false],["For Sale",1,false],["On Guard",1,false],["D'oh!",1,false],["Power Snack",1,false],["Whoah Ahh",1,false]]},
+  {name:"Friends & Family", cards:[["Herb Powell",1,false],["Kumiko",1,false],["Apu & Manjula",1,false],["Lenny & Carl",1,false],["The Van Houtens",1,false],["Reverend Lovejoy",1,false],["The Hibberts",2,false],["The Bullies",2,false],["Jacqueline Bouvier",2,false]]},
+  {name:"Property of Ned Flanders", cards:[["Such a Tool",1,false],["Smart Homer",1,false],["Go Away Ned",1,false],["Come On!",2,false],["Let's Go!",2,false],["Good Kitty",2,false],["Wasn't Me",2,false],["Slow Mow",2,false],["Hi-Diddly-No!",2,false]]},
+  {name:"Taste of Springfield", cards:[["Nuts & Gum",2,false],["Krusty O's",2,false],["Insanity Pepper",2,false],["Pork Chops",2,false],["Squishee",2,false],["Krusty Burger",2,false],["Luigi's Spaghetti",2,false],["Gummy de Milo",2,false],["Buzz Cola",2,false]]},
+  {name:"The Pin Pal's New Pal", cards:[["Let's Bowl",2,false],["Can You Bowl?",2,false],["Ooh! Jealous!",2,false],["Ugly Ugly",2,false],["Bowl Goal",2,false],["Good One!",2,false],["Claw vs. Claw",2,false],["Old Wins Gold",2,false],["Teammates",2,false]]},
+  {name:"Maggie's Big Adventure", cards:[["Thimble",2,false],["Dice",2,false],["House Rich",2,false],["Waterworks",2,false],["Scottie!",2,false],["Boom!",2,false],["Passing Go",2,false],["Out of Jail",3,false],["Railroad Ride!",3,false]]},
+  {name:"Springfield Superheroes", cards:[["Bartman",2,false],["Pie Man",2,false],["Hot Flash",2,false],["Bumblebee Man",2,false],["Radioactive Man",2,false],["Stretch Dude",3,false],["Clobber Girl",3,false],["Fallout Boy",3,false],["Fruit Bat Man",3,false]]},
+  {name:"When Homie Met Marge", cards:[["Birds Appear",2,false],["Pompatus",2,false],["Do You?",2,false],["I Do",2,false],["Carried Away",3,false],["Oh Homie",3,false],["Date Night",3,false],["Kisses",3,false],["I Do Again",3,false]]},
+  {name:"Marge's Many Jobs", cards:[["Officer Marge",3,false],["Painter",3,false],["Real Estate Agent",3,false],["Romance Author",3,false],["Pretzel Baker",3,false],["Mayor",3,false],["Bodybuilder",3,false],["Waitress",3,false],["Actress",3,false]]},
+  {name:"Old School Rivals", cards:[["Got Ya' Now",3,false],["Road Rage",3,false],["Evil Smirk",3,false],["Electricity",3,false],["Not the Face!",3,false],["Birthday",3,false],["Worth It!",3,false],["Excellent!",3,false],["Dog Run",3,false]]},
+  {name:"Springfield Elementary", cards:[["Ralph Wiggum",3,false],["Sherri & Terri",3,false],["Milhouse Van Houten",3,false],["Nelson Muntz",3,false],["Martin Prince",3,false],["Hubert Wong",3,false],["Allison Taylor",3,false],["Uter Zorker",4,false],["Janey Powell",4,false]]},
+  {name:"Exotic Animals", cards:[["Jub Jub",3,false],["Spider Pig",3,false],["Princess",3,false],["Illegal Panda",3,false],["Mr. Teeny",3,false],["Pinchy",4,false],["Screamapillar",4,false],["Stampy",4,false],["Blinky",4,true]]},
+  {name:"Simpsons in Song", cards:[["Baby on Board",3,false],["NOT ME!",3,false],["Last Requests",3,false],["We Do!",4,false],["See My Vest!",4,false],["Springfield",4,false],["Mixtape",4,false],["Sad Schmuck",4,true],["Moaning Lisa",5,false]]},
+  {name:"You Steam a Good Ham!", cards:[["Unforgettable",4,false],["Roast is Ruined",4,false],["Oh Ho Ho Ho",4,false],["Just Stretching",4,false],["Steamed Hams",4,false],["Obviously Grilled",4,false],["May I See It?",5,false],["Aurora Borealis",5,true],["Northern Lights",5,true]]},
+  {name:"Beloved Memes", cards:[["I'm in Danger",4,false],["Yells at Cloud",4,false],["Krumping",4,false],["Lisa Presents",4,false],["Homer in Bush",4,true],["More Coffee",4,true],["One of Us",5,false],["Stupid Sexy Flanders",5,true],["Worst Sticker Ever",6,false]]},
+  {name:"The Itchy & Scratchy Show", cards:[["Run Scratchy Run",4,false],["Heads Up",4,false],["Overstuffed",4,false],["Heart Attack",4,true],["Hit and Done",4,true],["Don't Laugh!",5,false],["Washed Up",5,false],["Shutdown",5,true],["Go to Railroad",6,false]]},
+  {name:"Moe's Tavern", cards:[["Moe's",4,false],["Rags to Rags",4,false],["Love Tester",4,true],["Pickled Eggs",4,true],["Barney Gumble",5,false],["Prank Call",5,false],["Lenny Leonard",5,true],["Carl Carlson",5,true],["Flaming Moe",6,false]]},
+  {name:"Homer's Many Jobs", cards:[["Astronaut",4,false],["Safety Inspector",4,false],["Power Plant",4,true],["Monorail Conductor",5,false],["Boxer",5,false],["Grease Collector",5,false],["Rock Star",5,true],["Beer Baron",5,true],["Homer Forever",6,false]]},
+  {name:"Upper Crust", cards:[["High Society",4,true],["Snooty Club",4,true],["Caviar Dreams",5,false],["Polo Grounds",5,false],["Ritzy",5,false],["Fancy Pants",5,true],["Well Heeled",5,true],["Top Shelf",5,true],["Diamond Geezus",6,false]]},
+  {name:"Iconic Moments", cards:[["Couch Gag",4,true],["Chalkboard",4,true],["D'oh!-rchestra",5,false],["Mmm... Donuts",5,false],["Bart's Prank",5,true],["Lisa's Sax",5,true],["Homer's Dream",5,true],["Maggie's First Word",5,true],["The Simpsons Forever",6,false]]}
+];
+
+// ── STATE ──
+let currentUser = null;       // supabase user object
+let viewingUserId = null;     // whose tracker we're viewing
+let viewingEmail = null;
+let mySheets = [];            // [{id, account_name, collected, dupes}]
+let viewingSheets = [];
+let currentSheetIdx = 0;
+let activeTab = 'collect';
+let tradeStarFilter = 'all';
+let sheetNameCallback = null;
+let saveTimer = null;
+let allUsersSheets = {};      // userId -> [{...}]
+
+function isReadOnly(){ return viewingUserId !== currentUser?.id; }
+function currentSheets(){ return isReadOnly() ? viewingSheets : mySheets; }
+function currentSheet(){ return currentSheets()[currentSheetIdx] || {collected:{},dupes:{},account_name:''}; }
+
+// ── AUTH ──
+async function sendMagicLink(){
+  const email = document.getElementById('auth-email').value.trim();
+  const msg = document.getElementById('auth-msg');
+  if(!email){ msg.textContent='Please enter your email.'; msg.className='auth-msg error'; return; }
+  msg.textContent='Sending...'; msg.className='auth-msg';
+  const {error} = await supa.auth.signInWithOtp({email, options:{emailRedirectTo: window.location.href}});
+  if(error){ msg.textContent='Error: '+error.message; msg.className='auth-msg error'; }
+  else { msg.textContent='✅ Magic link sent! Check your email and click the link.'; msg.className='auth-msg success'; }
+}
+
+async function signOut(){
+  await supa.auth.signOut();
+  location.reload();
+}
+
+// ── INIT ──
+async function init(){
+  show('loading-screen');
+  const {data:{session}} = await supa.auth.getSession();
+  if(session){ currentUser = session.user; await afterLogin(); }
+  else { show('auth-screen'); }
+
+  supa.auth.onAuthStateChange(async (event, session) => {
+    if(event === 'SIGNED_IN' && session){
+      currentUser = session.user;
+      await afterLogin();
+    }
+  });
+}
+
+async function afterLogin(){
+  await loadMySheets();
+  await loadAllUsersSheets();
+  showHome();
+}
+
+// ── DATA ──
+async function loadMySheets(){
+  const {data, error} = await supa.from('sheets').select('*').eq('user_id', currentUser.id).order('created_at');
+  if(error){ showToast('Error loading your sheets'); return; }
+  mySheets = data || [];
+  if(!mySheets.length){ await createSheet('Account 1'); }
+}
+
+async function loadAllUsersSheets(){
+  const {data, error} = await supa.from('sheets').select('*').order('created_at');
+  if(error) return;
+  allUsersSheets = {};
+  (data||[]).forEach(sh=>{
+    if(!allUsersSheets[sh.user_id]) allUsersSheets[sh.user_id]=[];
+    allUsersSheets[sh.user_id].push(sh);
+  });
+}
+
+async function createSheet(name){
+  const {data, error} = await supa.from('sheets').insert({user_id: currentUser.id, account_name: name, collected:{}, dupes:{}}).select().single();
+  if(error){ showToast('Error creating sheet'); return; }
+  mySheets.push(data);
+}
+
+async function saveCurrentSheet(){
+  if(isReadOnly()) return;
+  const sh = currentSheet();
+  if(!sh.id) return;
+  setSaveIndicator('saving');
+  const {error} = await supa.from('sheets').update({collected: sh.collected, dupes: sh.dupes, updated_at: new Date().toISOString()}).eq('id', sh.id);
+  if(error) showToast('Save failed!');
+  else setSaveIndicator('saved');
+}
+
+function scheduleSave(){
+  if(isReadOnly()) return;
+  setSaveIndicator('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveCurrentSheet, 1200);
+}
+
+function setSaveIndicator(state){
+  const el = document.getElementById('save-indicator');
+  if(!el) return;
+  if(state==='saving'){ el.textContent='Saving...'; el.className='save-indicator saving'; }
+  else if(state==='saved'){ el.textContent='✓ Saved'; el.className='save-indicator saved'; setTimeout(()=>{ el.textContent=''; el.className='save-indicator'; }, 2000); }
+  else { el.textContent=''; el.className='save-indicator'; }
+}
+
+// ── SCREENS ──
+function show(id){ ['loading-screen','auth-screen','home-screen','app'].forEach(s=>{ document.getElementById(s).style.display = s===id ? 'block' : 'none'; }); }
+
+function showHome(){
+  renderHomeScreen();
+  show('home-screen');
+}
+
+function renderHomeScreen(){
+  document.getElementById('home-user-email').textContent = currentUser?.email || '';
+  const grid = document.getElementById('user-cards-grid');
+  grid.innerHTML = '';
+  const seen = new Set();
+  Object.entries(allUsersSheets).forEach(([uid, sheets])=>{
+    if(seen.has(uid)) return; seen.add(uid);
+    const email = sheets[0]?.user_email || uid.slice(0,8)+'...';
+    const totalCollected = sheets.reduce((a,sh)=>a+Object.values(sh.collected||{}).filter(Boolean).length,0);
+    const isMe = uid === currentUser?.id;
+    const card = document.createElement('div');
+    card.className = 'user-card' + (isMe?' mine':'');
+    card.innerHTML = `<div class="user-card-name">${isMe ? '👤 Me' : '👥 '+email}</div>
+      <div class="user-card-meta">${sheets.length} sheet(s) · ${totalCollected} collected</div>
+      ${isMe?'<span class="user-card-badge">MY TRACKER</span>':''}`;
+    card.onclick = ()=>{ viewTracker(uid, email, sheets); };
+    grid.appendChild(card);
+  });
+  if(!Object.keys(allUsersSheets).length){
+    grid.innerHTML = '<div class="empty-msg">No trackers yet — you\'ll be the first!</div>';
+  }
+}
+
+function enterMyTracker(){ viewTracker(currentUser.id, currentUser.email, mySheets); }
+
+function viewTracker(uid, email, sheets){
+  viewingUserId = uid;
+  viewingEmail = email;
+  viewingSheets = sheets;
+  currentSheetIdx = 0;
+  document.getElementById('viewing-as-label').textContent = 'Viewing: ' + (uid===currentUser?.id ? 'My Tracker' : email);
+  document.getElementById('readonly-badge').style.display = isReadOnly() ? 'inline' : 'none';
+  renderSheets();
+  renderAll();
+  show('app');
+}
+
+// ── SHEETS ──
+function renderSheets(){
+  const bar = document.getElementById('sheets-bar');
+  bar.innerHTML = '';
+  currentSheets().forEach((sh,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'sheet-tab' + (i===currentSheetIdx?' active':'');
+    btn.textContent = sh.account_name || 'Account '+(i+1);
+    if(!isReadOnly()) btn.ondblclick = ()=>renameSheet(i);
+    btn.onclick = ()=>{ currentSheetIdx=i; renderSheets(); renderAll(); };
+    bar.appendChild(btn);
+  });
+  if(!isReadOnly()){
+    const add = document.createElement('button');
+    add.className = 'sheet-tab-add'; add.textContent = '+ Add';
+    add.onclick = ()=>{
+      sheetNameCallback = async (name)=>{ await createSheet(name); currentSheetIdx=mySheets.length-1; renderSheets(); renderAll(); };
+      document.getElementById('sheet-modal-title').textContent = 'New Account Sheet';
+      document.getElementById('sheet-name-input').value = '';
+      openModal('sheet-name-modal');
+    };
+    bar.appendChild(add);
+  }
+}
+
+function renameSheet(i){
+  sheetNameCallback = async (name)=>{
+    mySheets[i].account_name = name;
+    await supa.from('sheets').update({account_name: name}).eq('id', mySheets[i].id);
+    renderSheets();
+  };
+  document.getElementById('sheet-modal-title').textContent = 'Rename Sheet';
+  document.getElementById('sheet-name-input').value = mySheets[i].account_name || '';
+  openModal('sheet-name-modal');
+}
+
+async function confirmSheetName(){
+  const val = document.getElementById('sheet-name-input').value.trim();
+  if(!val){ showToast('Enter a name!'); return; }
+  if(sheetNameCallback) await sheetNameCallback(val);
+  closeModal('sheet-name-modal');
+}
+
+// ── RENDER ALL ──
+function renderAll(){ updateProgress(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); }
+
+function updateProgress(){
+  const sh = currentSheet();
+  let total=0, collected=0, vault=0;
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ total++; const k=si+'-'+ci; if(sh.collected?.[k]) collected++; const d=sh.dupes?.[k]||0; if(d>0) vault+=d*c[1]; }); });
+  document.getElementById('prog-fill').style.width=(total?Math.round(collected/total*100):0)+'%';
+  document.getElementById('prog-label').textContent=collected+' / '+total;
+  document.getElementById('vault-stars').textContent=vault;
+}
+
+function switchTab(tab,btn){
+  activeTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['collect','needs','trade','compare','search'].forEach(t=>{ document.getElementById('tab-'+t).style.display=(t===tab?'block':'none'); });
+}
+
+// ── COLLECT ──
+function toggleCollect(si,ci){
+  if(isReadOnly()) return;
+  const sh = currentSheet();
+  const k = si+'-'+ci;
+  if(!sh.collected) sh.collected={};
+  sh.collected[k] = !sh.collected[k];
+  scheduleSave(); renderCollect(); updateProgress();
+}
+function changeDupe(si,ci,delta){
+  if(isReadOnly()) return;
+  const sh = currentSheet();
+  const k = si+'-'+ci;
+  if(!sh.dupes) sh.dupes={};
+  sh.dupes[k] = Math.max(0,(sh.dupes[k]||0)+delta);
+  scheduleSave(); renderCollect(); updateProgress();
+}
+
+function renderCollect(){
+  const cont = document.getElementById('tab-collect');
+  cont.innerHTML = '';
+  const sh = currentSheet();
+  const fUnc = document.getElementById('f-uncollected')?.checked ?? true;
+  const fCol = document.getElementById('f-collected')?.checked ?? true;
+  const fDup = document.getElementById('f-dupes')?.checked ?? false;
+  const ro = isReadOnly();
+
+  SETS.forEach((set,si)=>{
+    const cards = set.cards;
+    const collectedCount = cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
+    const pct = Math.round(collectedCount/cards.length*100);
+    const block = document.createElement('div'); block.className='set-block';
+    const hdr = document.createElement('div'); hdr.className='set-header';
+    hdr.innerHTML=`<span class="set-chevron open" id="chev-${si}">▶</span>
+      <span class="set-title">Set ${si+1}: ${set.name}</span>
+      <div class="set-prog-wrap">
+        <div class="set-prog-track"><div class="set-prog-fill" style="width:${pct}%"></div></div>
+        <span class="set-prog-label">${collectedCount}/${cards.length}</span>
+      </div>`;
+    hdr.onclick=()=>{
+      const g=document.getElementById('grid-'+si);
+      const ch=document.getElementById('chev-'+si);
+      const open=g.style.display!=='none';
+      g.style.display=open?'none':'grid';
+      ch.classList.toggle('open',!open);
+    };
+    block.appendChild(hdr);
+    const grid = document.createElement('div'); grid.className='card-grid'; grid.id='grid-'+si;
+    cards.forEach((c,ci)=>{
+      const k=si+'-'+ci;
+      const collected=!!sh.collected?.[k];
+      const dupes=sh.dupes?.[k]||0;
+      const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc);
+      if(!show) return;
+      const card=document.createElement('div');
+      card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'');
+      const stars='★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]));
+      card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}
+        <div class="card-name">${c[0]}</div>
+        <div class="card-stars">${stars}</div>
+        ${!ro?`<div class="card-dupe-row">
+          <button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},-1)">−</button>
+          <span class="dupe-count">${dupes}</span>
+          <button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1)">+</button>
+          ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]}⭐)</span>`:''}
+        </div>`:`<div class="card-dupe-row"><span class="dupe-count">${dupes>0?'×'+dupes+' dupe':''}</span></div>`}`;
+      if(!ro) card.onclick=()=>toggleCollect(si,ci);
+      grid.appendChild(card);
+    });
+    if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.style.padding='10px 14px'; em.textContent='No cards match filter.'; grid.appendChild(em); }
+    block.appendChild(grid);
+    cont.appendChild(block);
+  });
+}
+
+// ── NEEDS ──
+function renderNeeds(){
+  const cont=document.getElementById('tab-needs');
+  cont.innerHTML='<div class="section-title">Cards Still Needed</div>';
+  const sh=currentSheet();
+  const tiers={1:[],2:[],3:[],4:[],5:[],6:[]};
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!sh.collected?.[si+'-'+ci]) tiers[c[1]].push({name:c[0],gold:c[2]}); }); });
+  [1,2,3,4,5,6].forEach(star=>{
+    if(!tiers[star].length) return;
+    const block=document.createElement('div'); block.className='needs-block';
+    block.innerHTML=`<div class="needs-tier">${'★'.repeat(star)} ${star}-Star (${tiers[star].length})</div><div class="needs-chips" id="nc-${star}"></div>`;
+    const chips=block.querySelector('#nc-'+star);
+    tiers[star].forEach(c=>{ const chip=document.createElement('span'); chip.className='chip'+(c.gold?' gold-chip':''); chip.textContent=c.name+(c.gold?' ⭐':''); chips.appendChild(chip); });
+    cont.appendChild(block);
+  });
+  if(Object.values(tiers).every(a=>!a.length)) cont.innerHTML+='<div style="text-align:center;padding:30px;font-size:1.2rem;">🎉 D\'oh-mazing! Album complete!</div>';
+}
+
+// ── TRADE ──
+function renderTrade(){
+  const cont=document.getElementById('tab-trade');
+  cont.innerHTML=`<div class="section-title">Trade Helper — Duplicates</div>
+    <div class="star-filter-row">${['all',1,2,3,4,5,6].map(s=>`<button class="star-filter-btn${tradeStarFilter==s?' active':''}" onclick="setTradeFilter('${s}',this)">${s==='all'?'All':'★'.repeat(s)}</button>`).join('')}</div>
+    <div id="trade-list"></div>`;
+  const sh=currentSheet();
+  const list=document.getElementById('trade-list');
+  let found=false;
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ const d=sh.dupes?.[si+'-'+ci]||0; if(!d) return; if(tradeStarFilter!=='all'&&c[1]!=tradeStarFilter) return; found=true; const row=document.createElement('div'); row.className='trade-row'; row.innerHTML=`<span style="font-weight:700">${c[0]}${c[2]?' ⭐':''}</span><span style="color:var(--text-muted)">→</span><span>${'★'.repeat(c[1])} · ×${d} dupe${d>1?'s':''} · Set ${si+1}</span>`; list.appendChild(row); }); });
+  if(!found){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No duplicates recorded yet.'; list.appendChild(em); }
+}
+function setTradeFilter(v,btn){ tradeStarFilter=v; document.querySelectorAll('.star-filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTrade(); }
+
+// ── COMPARE ──
+function renderCompare(){
+  const cont=document.getElementById('tab-compare');
+  cont.innerHTML=`<div class="section-title">Compare Trade Lists</div>
+    <div class="compare-area">
+      <div class="compare-box">
+        <div style="font-weight:700;margin-bottom:6px;">My Trade List</div>
+        <button class="btn-sm" onclick="exportTradeList()">Generate</button>
+        <textarea id="my-trade-list" style="margin-top:8px;" readonly placeholder="Click generate..."></textarea>
+      </div>
+      <div class="compare-box">
+        <div style="font-weight:700;margin-bottom:6px;">Their Trade List</div>
+        <textarea id="their-trade-list" placeholder="Paste a friend's trade list here..."></textarea>
+        <button class="btn-sm" style="margin-top:8px;" onclick="compareTradeList()">Find Matches</button>
+        <div id="compare-result" style="margin-top:10px;"></div>
+      </div>
+    </div>`;
+}
+function exportTradeList(){
+  const sh=currentSheet();
+  const lines=[`${currentUser?.email} — ${sh.account_name||'Account'} Dupes`,'---'];
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ const d=sh.dupes?.[si+'-'+ci]||0; if(d>0) lines.push(`${c[0]} (${c[1]}★${c[2]?' GOLD':''}) x${d}`); }); });
+  document.getElementById('my-trade-list').value=lines.join('\n')||'No duplicates yet.';
+}
+function compareTradeList(){
+  const their=document.getElementById('their-trade-list').value;
+  const sh=currentSheet();
+  const res=document.getElementById('compare-result');
+  if(!their.trim()){ res.innerHTML='<div class="empty-msg">Paste their list first.</div>'; return; }
+  const matches=[];
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!sh.collected?.[si+'-'+ci]&&their.includes(c[0])) matches.push(c[0]); }); });
+  if(!matches.length){ res.innerHTML='<div class="empty-msg">No matches found.</div>'; return; }
+  res.innerHTML='<div style="font-weight:700;margin-bottom:6px;">They have cards you need:</div>'+matches.map(m=>`<span class="chip" style="display:inline-block;margin:3px;">${m}</span>`).join('');
+}
+
+// ── SEARCH ──
+function renderSearch(q){
+  const cont=document.getElementById('tab-search');
+  if(!cont.querySelector('.search-input')){
+    cont.innerHTML=`<input class="search-input" placeholder="Search cards..." oninput="renderSearch(this.value)"><div id="search-grid" class="search-results"></div>`;
+  }
+  const grid=cont.querySelector('#search-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  if(!q.trim()) return;
+  const sh=currentSheet(); const ql=q.toLowerCase(); const ro=isReadOnly();
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!c[0].toLowerCase().includes(ql)) return; const k=si+'-'+ci; const collected=!!sh.collected?.[k]; const dupes=sh.dupes?.[k]||0; const card=document.createElement('div'); card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':''); card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}<div class="card-name">${c[0]}</div><div style="font-size:.7rem;color:var(--text-muted)">Set ${si+1}</div><div class="card-stars">${'★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]))}</div>${!ro?`<div class="card-dupe-row"><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},-1);renderSearch(document.querySelector('.search-input').value)">−</button><span class="dupe-count">${dupes}</span><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1);renderSearch(document.querySelector('.search-input').value)">+</button></div>`:''}`;
+    if(!ro) card.onclick=()=>{ toggleCollect(si,ci); renderSearch(q); };
+    grid.appendChild(card);
+  }); });
+  if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No cards found.'; grid.appendChild(em); }
+}
+
+// ── DARK MODE ──
+function toggleDark(){
+  const on=document.body.classList.toggle('dark');
+  document.getElementById('dark-toggle').textContent=on?'☀️':'🌙';
+  const dt2=document.getElementById('dark-toggle2'); if(dt2) dt2.textContent=on?'☀️':'🌙';
+  try{localStorage.setItem('simpsons-dark',on?'1':'0');}catch(e){}
+}
+
+// ── MODALS ──
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
+
+// ── BOOT ──
+window.addEventListener('scroll',()=>{ document.getElementById('back-to-top').classList.toggle('visible',window.scrollY>300); });
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); }));
+try{ if(localStorage.getItem('simpsons-dark')==='1'){ document.body.classList.add('dark'); document.getElementById('dark-toggle').textContent='☀️'; } }catch(e){}
+init();
+</script>
+</body>
+</html>
