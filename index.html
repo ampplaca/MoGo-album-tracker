@@ -331,12 +331,26 @@ async function signOut(){
 // ── INIT ──
 async function init(){
   show('loading-screen');
+
+  // Handle magic link token in URL hash
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const tokenPart = hash.split('#').find(p => p.includes('access_token')) || '';
+    const params = new URLSearchParams(tokenPart);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if(accessToken && refreshToken){
+      await supa.auth.setSession({access_token: accessToken, refresh_token: refreshToken});
+    }
+    history.replaceState(null, '', window.location.pathname);
+  }
+
   const {data:{session}} = await supa.auth.getSession();
   if(session){ currentUser = session.user; await afterLogin(); }
   else { show('auth-screen'); }
 
   supa.auth.onAuthStateChange(async (event, session) => {
-    if(event === 'SIGNED_IN' && session){
+    if((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && !currentUser){
       currentUser = session.user;
       await afterLogin();
     }
