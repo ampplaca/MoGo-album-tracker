@@ -112,9 +112,13 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 .set-chevron.open{transform:rotate(90deg);}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;padding:10px 14px 14px;}
 .card-item{border:2px solid var(--border);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;background:var(--bg);}
-.card-item.collected{background:var(--yellow-light);border-color:var(--yellow-dark);}
+.card-item.collected{background:#b8f0b8;border-color:#2e7d32;box-shadow:inset 0 0 0 1px #2e7d3244;}
+.card-item.collected .card-name{color:#1b5e20;}
+body.dark .card-item.collected{background:#1a3a1a;border-color:#4caf50;}
+body.dark .card-item.collected .card-name{color:#81c784;}
 .card-item.gold-card{border-color:var(--gold);background:var(--gold-bg);}
-.card-item.gold-card.collected{background:#FFE082;border-color:#E65100;}
+.card-item.gold-card.collected{background:#ffe082;border-color:#e65100;box-shadow:inset 0 0 0 1px #e6510044;}
+body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800;}
 .card-item.readonly{cursor:default;}
 .card-name{font-size:.78rem;font-weight:600;line-height:1.2;margin-bottom:3px;}
 .card-stars{font-size:.7rem;color:var(--gold);}
@@ -344,6 +348,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
           <label class="filter-item"><input type="checkbox" id="f-dupes" onchange="renderCollect()"> Dupes only</label>
         </div>
       </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;">
+        <button class="btn-sm" onclick="expandAll()">Expand All</button>
+        <button class="btn-sm" onclick="collapseAll()">Collapse All</button>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('collect',this)">Collect</button>
@@ -518,6 +526,42 @@ async function createSheet(name, displayName){
   mySheets.push(data);
 }
 
+function jumpToCard(si, ci){
+  // Switch to collect tab
+  const collectBtn = document.querySelector('.tab-btn');
+  switchTab('collect', collectBtn);
+  // Make sure the set is expanded
+  const grid = document.getElementById('grid-'+si);
+  const chev = document.getElementById('chev-'+si);
+  if(grid && grid.style.display==='none'){
+    grid.style.display='grid';
+    if(chev) chev.classList.add('open');
+  }
+  // Scroll to it
+  setTimeout(()=>{
+    const setBlock = grid?.closest('.set-block');
+    if(setBlock) setBlock.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 100);
+}
+
+function expandAll(){
+  SETS.forEach((_,si)=>{
+    const g=document.getElementById('grid-'+si);
+    const ch=document.getElementById('chev-'+si);
+    if(g){ g.style.display='grid'; }
+    if(ch){ ch.classList.add('open'); }
+  });
+}
+
+function collapseAll(){
+  SETS.forEach((_,si)=>{
+    const g=document.getElementById('grid-'+si);
+    const ch=document.getElementById('chev-'+si);
+    if(g){ g.style.display='none'; }
+    if(ch){ ch.classList.remove('open'); }
+  });
+}
+
 function openChangeName(){
   const current = mySheets[0]?.display_name || '';
   document.getElementById('change-name-input').value = current;
@@ -667,7 +711,7 @@ function renderAll(){ updateProgress(); renderCollect(); renderNeeds(); renderTr
 function updateProgress(){
   const sh = currentSheet();
   let total=0, collected=0, vault=0;
-  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ total++; const k=si+'-'+ci; if(sh.collected?.[k]) collected++; const d=sh.dupes?.[k]||0; if(d>0) vault+=d*c[1]; }); });
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ total++; const k=si+'-'+ci; if(sh.collected?.[k]) collected++; const d=sh.dupes?.[k]||0; if(d>0) vault+=d*c[1]*(c[2]?2:1); }); });
   document.getElementById('prog-fill').style.width=(total?Math.round(collected/total*100):0)+'%';
   document.getElementById('prog-label').textContent=collected+' / '+total;
   document.getElementById('vault-stars').textContent=vault;
@@ -746,7 +790,7 @@ function renderCollect(){
           <button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},-1)">−</button>
           <span class="dupe-count">${dupes}</span>
           <button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1)">+</button>
-          ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]}⭐)</span>`:''}
+          ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]*(c[2]?2:1)}⭐)</span>`:''}
         </div>`:`<div class="card-dupe-row"><span class="dupe-count">${dupes>0?'×'+dupes+' dupe':''}</span></div>`}`;
       if(!ro) card.onclick=()=>toggleCollect(si,ci);
       grid.appendChild(card);
@@ -763,13 +807,17 @@ function renderNeeds(){
   cont.innerHTML='<div class="section-title">Cards Still Needed</div>';
   const sh=currentSheet();
   const tiers={1:[],2:[],3:[],4:[],5:[],6:[]};
-  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!sh.collected?.[si+'-'+ci]) tiers[c[1]].push({name:c[0],gold:c[2]}); }); });
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!sh.collected?.[si+'-'+ci]) tiers[c[1]].push({name:c[0],gold:c[2],si,ci}); }); });
   [1,2,3,4,5,6].forEach(star=>{
+    const normal = tiers[star].filter(c=>!c.gold);
+    const gold   = tiers[star].filter(c=>c.gold);
     if(!tiers[star].length) return;
     const block=document.createElement('div'); block.className='needs-block';
-    block.innerHTML=`<div class="needs-tier">${'★'.repeat(star)} ${star}-Star (${tiers[star].length})</div><div class="needs-chips" id="nc-${star}"></div>`;
+    const goldHTML = gold.length ? `<div class="needs-tier" style="margin-top:8px;">⭐ ${star}-Star GOLD (${gold.length})</div><div class="needs-chips" id="nc-g-${star}"></div>` : '';
+    block.innerHTML=`<div class="needs-tier">${'★'.repeat(star)} ${star}-Star (${normal.length})</div><div class="needs-chips" id="nc-${star}"></div>${goldHTML}`;
     const chips=block.querySelector('#nc-'+star);
-    tiers[star].forEach(c=>{ const chip=document.createElement('span'); chip.className='chip'+(c.gold?' gold-chip':''); chip.textContent=c.name+(c.gold?' ⭐':''); chips.appendChild(chip); });
+    normal.forEach(c=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=c.name; chip.title='Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); chips.appendChild(chip); });
+    if(gold.length){ const gc=block.querySelector('#nc-g-'+star); gold.forEach(c=>{ const chip=document.createElement('span'); chip.className='chip gold-chip'; chip.textContent=c.name+' ⭐'; chip.title='Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); gc.appendChild(chip); }); }
     cont.appendChild(block);
   });
   if(Object.values(tiers).every(a=>!a.length)) cont.innerHTML+='<div style="text-align:center;padding:30px;font-size:1.2rem;">🎉 D\'oh-mazing! Album complete!</div>';
@@ -783,9 +831,11 @@ function renderTrade(){
     <div id="trade-list"></div>`;
   const sh=currentSheet();
   const list=document.getElementById('trade-list');
-  let found=false;
-  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ const d=sh.dupes?.[si+'-'+ci]||0; if(!d) return; if(tradeStarFilter!=='all'&&c[1]!=tradeStarFilter) return; found=true; const row=document.createElement('div'); row.className='trade-row'; row.innerHTML=`<span style="font-weight:700">${c[0]}${c[2]?' ⭐':''}</span><span style="color:var(--text-muted)">→</span><span>${'★'.repeat(c[1])} · ×${d} dupe${d>1?'s':''} · Set ${si+1}</span>`; list.appendChild(row); }); });
-  if(!found){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No duplicates recorded yet.'; list.appendChild(em); }
+  const normal=[], gold=[];
+  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ const d=sh.dupes?.[si+'-'+ci]||0; if(!d) return; if(tradeStarFilter!=='all'&&c[1]!=tradeStarFilter) return; (c[2]?gold:normal).push({c,d,si}); }); });
+  if(!normal.length&&!gold.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No duplicates recorded yet.'; list.appendChild(em); return; }
+  if(gold.length){ const hdr=document.createElement('div'); hdr.style.cssText='font-weight:700;font-size:.8rem;color:var(--gold);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.05em;'; hdr.textContent='⭐ Gold Cards'; list.appendChild(hdr); gold.forEach(({c,d,si})=>{ const row=document.createElement('div'); row.className='trade-row'; row.style.borderColor='var(--gold)'; row.innerHTML=`<span style="font-weight:700;color:var(--gold)">${c[0]} ⭐</span><span style="color:var(--text-muted)">→</span><span>${'★'.repeat(c[1])} · ×${d} dupe${d>1?'s':''} · Set ${si+1}</span>`; list.appendChild(row); }); }
+  if(normal.length){ const hdr=document.createElement('div'); hdr.style.cssText='font-weight:700;font-size:.8rem;color:var(--text-muted);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.05em;'; hdr.textContent='Regular Cards'; list.appendChild(hdr); normal.forEach(({c,d,si})=>{ const row=document.createElement('div'); row.className='trade-row'; row.innerHTML=`<span style="font-weight:700">${c[0]}</span><span style="color:var(--text-muted)">→</span><span>${'★'.repeat(c[1])} · ×${d} dupe${d>1?'s':''} · Set ${si+1}</span>`; list.appendChild(row); }); }
 }
 function setTradeFilter(v,btn){ tradeStarFilter=v; document.querySelectorAll('.star-filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTrade(); }
 
@@ -845,15 +895,18 @@ function renderSearch(q){
 // ── FANCY NEEDS & DUPE CARDS ──
 function buildFancyCard(starLevel, ownerName, subtitle, rows, mode){
   const starStr = '★'.repeat(starLevel);
+  const normal = rows.filter(r=>!r.gold);
+  const gold = rows.filter(r=>r.gold);
   const isEmpty = !rows.length;
   const totalLabel = mode==='dupes' ? rows.reduce((a,r)=>a+r.qty,0)+' Cards' : rows.length+' Cards';
-  let listHTML = isEmpty
-    ? `<div class="fc-empty">No ${starLevel}★ ${mode==='dupes'?'dupes':'needs'} found.</div>`
-    : rows.map((r,i)=>`<div class="fc-row">
-        <span class="fc-rownum">${String(i+1).padStart(2,'0')}</span>
+  const makeRows = (arr, offset=0) => arr.map((r,i)=>`<div class="fc-row">
+        <span class="fc-rownum">${String(i+1+offset).padStart(2,'0')}</span>
         <span class="fc-name">${r.name}${r.gold?'<span class="fc-gold-tag">GOLD</span>':''}</span>
         ${mode==='dupes'?`<span class="fc-qty">${r.qty}</span>`:''}
       </div>`).join('');
+  let listHTML = isEmpty
+    ? `<div class="fc-empty">No ${starLevel}★ ${mode==='dupes'?'dupes':'needs'} found.</div>`
+    : (normal.length?makeRows(normal):'') + (gold.length?`<div style="padding:6px 28px 2px;font-size:10px;letter-spacing:2px;color:#c8a040;text-transform:uppercase;border-top:1px solid rgba(200,160,80,0.15);margin-top:4px;">⭐ Gold</div>`+makeRows(gold,normal.length):'');
   return `<div class="dupe-card card-${starLevel}">
     <div class="fc-header">
       <span class="fc-stars">${starStr}</span>
