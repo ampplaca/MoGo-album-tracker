@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍩 Simpsons Go Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
   --yellow:#FED400;--yellow-dark:#E5B800;--yellow-light:#FFF5B0;
@@ -594,7 +595,7 @@ function renderHomeScreen(){
     card.innerHTML = `<div class="user-card-name">${isMe ? '👤 '+displayName : '👥 '+displayName}</div>
       <div class="user-card-meta">${sheets.length} sheet(s) · ${totalCollected} collected</div>
       ${isMe?'<span class="user-card-badge">MY TRACKER</span>':''}`;
-    card.onclick = ()=>{ viewTracker(uid, email, sheets); };
+    card.onclick = ()=>{ viewTracker(uid, displayName, sheets); };
     grid.appendChild(card);
   });
   if(!Object.keys(allUsersSheets).length){
@@ -894,6 +895,7 @@ function renderNeedsCards(){
     <span class="fancy-label">Sheet:</span>
     <select class="fancy-select" id="nc-sheet-sel" onchange="drawNeedsCards()">${getSheetOptions('me')}</select>
     <button class="fc-share-btn" onclick="shareNeedsList()">📋 Copy List</button>
+    <button class="fc-share-btn" onclick="downloadCards('nc-cards', 'needs')">⬇️ Download PNG</button>
   </div>
   <div class="fancy-cards-wrap" id="nc-cards"></div>`;
   drawNeedsCards();
@@ -934,6 +936,7 @@ function renderDupeCards(){
     <span class="fancy-label">Sheet:</span>
     <select class="fancy-select" id="dc-sheet-sel" onchange="drawDupeCards()">${getSheetOptions('me')}</select>
     <button class="fc-share-btn" onclick="shareDupeList()">📋 Copy List</button>
+    <button class="fc-share-btn" onclick="downloadCards('dc-cards', 'dupes')">⬇️ Download PNG</button>
   </div>
   <div class="fancy-cards-wrap" id="dc-cards"></div>`;
   drawDupeCards();
@@ -964,6 +967,58 @@ function drawDupeCards(){
 
   const wrap = document.getElementById('dc-cards');
   wrap.innerHTML = [4,5,6].map(star=>buildFancyCard(star, ownerName, 'Available to Trade', dupes[star], 'dupes')).join('');
+}
+
+async function downloadCards(wrapperId, mode){
+  const wrap = document.getElementById(wrapperId);
+  if(!wrap || !wrap.children.length){ showToast('No cards to download!'); return; }
+  showToast('Generating image...');
+
+  // Temporarily style the wrapper for clean capture
+  const orig = {
+    bg: wrap.style.background,
+    pad: wrap.style.padding,
+    width: wrap.style.width,
+    maxWidth: wrap.style.maxWidth,
+  };
+  wrap.style.background = '#0f0c1a';
+  wrap.style.padding = '24px';
+  wrap.style.width = '520px';
+  wrap.style.maxWidth = '520px';
+
+  try {
+    const canvas = await html2canvas(wrap, {
+      backgroundColor: '#0f0c1a',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 520,
+    });
+
+    // Restore styles
+    wrap.style.background = orig.bg;
+    wrap.style.padding = orig.pad;
+    wrap.style.width = orig.width;
+    wrap.style.maxWidth = orig.maxWidth;
+
+    const uid = document.getElementById(wrapperId==='nc-cards'?'nc-user-sel':'dc-user-sel')?.value || 'me';
+    const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+    const ownerName = sheets[0]?.display_name || 'tracker';
+    const filename = ownerName.replace(/\s+/g,'_')+'_'+mode+'_list.png';
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Downloaded!');
+  } catch(e) {
+    wrap.style.background = orig.bg;
+    wrap.style.padding = orig.pad;
+    wrap.style.width = orig.width;
+    wrap.style.maxWidth = orig.maxWidth;
+    showToast('Download failed — try again');
+    console.error(e);
+  }
 }
 
 function shareNeedsList(){
