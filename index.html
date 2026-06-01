@@ -159,12 +159,91 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 .back-to-top{position:fixed;bottom:24px;right:20px;background:var(--yellow);border:none;border-radius:50%;width:40px;height:40px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow);display:none;z-index:150;}
 .back-to-top.visible{display:block;}
 .empty-msg{color:var(--text-muted);font-size:.83rem;padding:8px 0;}
+
+/* ── FANCY STAR CARDS ── */
+.fancy-cards-wrap{display:flex;flex-direction:column;gap:20px;padding:4px 0 20px;}
+.fancy-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px;}
+.fancy-select{padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:.85rem;cursor:pointer;}
+.fancy-label{font-size:.82rem;color:var(--text-muted);}
+.dupe-card{width:100%;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 20px 60px rgba(0,0,0,0.5);}
+.card-4{background:linear-gradient(160deg,#1a1030 0%,#100d22 100%);border:1px solid rgba(124,58,237,0.4);}
+.card-4 .fc-header{border-bottom:1px solid rgba(124,58,237,0.2);}
+.card-4 .fc-stars{color:#a78bfa;text-shadow:0 0 12px rgba(124,58,237,0.5);}
+.card-4 .fc-owner{color:rgba(167,139,250,0.55);}
+.card-4 .fc-subtitle{color:rgba(167,139,250,0.35);}
+.card-4 .fc-divider{background:linear-gradient(to right,transparent,rgba(124,58,237,0.5),transparent);}
+.card-4 .fc-row{border-bottom:1px solid rgba(255,255,255,0.04);}
+.card-4 .fc-qty{color:#a78bfa;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);}
+.card-4 .fc-rownum{color:rgba(167,139,250,0.3);}
+.card-4 .fc-footer{border-top:1px solid rgba(124,58,237,0.2);}
+.card-4 .fc-total{color:#a78bfa;}
+.card-5{background:linear-gradient(160deg,#1e1830 0%,#150f25 100%);border:1px solid rgba(200,160,80,0.3);}
+.card-5 .fc-header{border-bottom:1px solid rgba(200,160,80,0.15);}
+.card-5 .fc-stars{color:#c8a040;text-shadow:0 0 12px rgba(200,160,80,0.5);}
+.card-5 .fc-owner{color:rgba(200,160,80,0.55);}
+.card-5 .fc-subtitle{color:rgba(200,180,140,0.35);}
+.card-5 .fc-divider{background:linear-gradient(to right,transparent,rgba(200,160,80,0.4),transparent);}
+.card-5 .fc-row{border-bottom:1px solid rgba(255,255,255,0.04);}
+.card-5 .fc-qty{color:#c8a040;background:rgba(200,160,80,0.1);border:1px solid rgba(200,160,80,0.2);}
+.card-5 .fc-rownum{color:rgba(200,160,80,0.3);}
+.card-5 .fc-footer{border-top:1px solid rgba(200,160,80,0.15);}
+.card-5 .fc-total{color:#c8a040;}
+.card-6{background:linear-gradient(160deg,#1e0f0f 0%,#150a0a 100%);border:1px solid rgba(220,38,38,0.35);}
+.card-6 .fc-header{border-bottom:1px solid rgba(220,38,38,0.2);}
+.card-6 .fc-stars{color:#f87171;text-shadow:0 0 12px rgba(220,38,38,0.5);}
+.card-6 .fc-owner{color:rgba(248,113,113,0.55);}
+.card-6 .fc-subtitle{color:rgba(248,113,113,0.35);}
+.card-6 .fc-divider{background:linear-gradient(to right,transparent,rgba(220,38,38,0.45),transparent);}
+.card-6 .fc-row{border-bottom:1px solid rgba(255,255,255,0.04);}
+.card-6 .fc-qty{color:#f87171;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);}
+.card-6 .fc-rownum{color:rgba(248,113,113,0.3);}
+.card-6 .fc-footer{border-top:1px solid rgba(220,38,38,0.2);}
+.card-6 .fc-total{color:#f87171;}
+.fc-header{padding:24px 32px 20px;text-align:center;}
+.fc-stars{font-size:16px;letter-spacing:3px;display:block;margin-bottom:8px;}
+.fc-owner{font-size:11px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:5px;}
+.fc-title{font-size:20px;font-weight:700;color:#f0e6c8;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.fc-subtitle{font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:5px;}
+.fc-divider{width:40px;height:1px;margin:0 auto 7px;}
+.fc-list{padding:4px 0;}
+.fc-row{display:flex;align-items:center;padding:11px 28px;gap:10px;}
+.fc-row:last-child{border-bottom:none!important;}
+.fc-rownum{font-size:11px;font-weight:600;width:22px;flex-shrink:0;}
+.fc-name{flex:1;font-size:14px;color:#e8dcc8;font-weight:400;}
+.fc-gold-tag{font-size:10px;background:rgba(200,160,80,0.2);color:#c8a040;border:1px solid rgba(200,160,80,0.3);border-radius:4px;padding:1px 5px;margin-left:4px;}
+.fc-qty{font-size:13px;font-weight:600;padding:3px 0;width:34px;text-align:center;border-radius:5px;flex-shrink:0;}
+.fc-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;}
+.fc-footer-label{font-size:11px;color:rgba(200,180,140,0.3);text-transform:uppercase;letter-spacing:2px;}
+.fc-empty{padding:16px 28px;font-size:13px;color:rgba(200,180,140,0.3);font-style:italic;}
+.fc-share-btn{margin-top:12px;padding:8px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text);cursor:pointer;font-size:.8rem;font-weight:600;}
+.fc-share-btn:hover{border-color:var(--yellow-dark);}
 .divider{border:none;border-top:2px solid var(--border);}
 </style>
 </head>
 <body>
 
 <!-- MODALS -->
+<div class="modal-bg" id="display-name-modal">
+  <div class="modal">
+    <h2>👋 Welcome! Set Your Display Name</h2>
+    <p>This is how other players will identify you in the tracker. You can't change it later so choose wisely!</p>
+    <input class="modal-input" id="display-name-input" placeholder="e.g. Homer, Bart, Marge..." maxlength="24" onkeydown="if(event.key==='Enter')confirmDisplayName()">
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="confirmDisplayName()">Let's Go! 🍩</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="change-name-modal">
+  <div class="modal">
+    <h2>✏️ Change Display Name</h2>
+    <p>This is how other players see you. Pick something fun!</p>
+    <input class="modal-input" id="change-name-input" placeholder="Your display name..." maxlength="24" onkeydown="if(event.key==='Enter')confirmChangeName()">
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="confirmChangeName()">Save</button>
+      <button class="modal-btn" onclick="closeModal('change-name-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="sheet-name-modal">
   <div class="modal">
     <h2 id="sheet-modal-title">New Account Sheet</h2>
@@ -221,6 +300,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
     <span class="app-title">🍩 Simpsons Go Tracker</span>
     <div class="top-btns">
       <span id="home-user-email" style="font-size:.78rem;color:#333;"></span>
+      <button class="btn-sm-strip" onclick="openChangeName()">✏️ Name</button>
       <button class="btn-sm-strip" onclick="toggleDark()" id="dark-toggle">🌙</button>
       <button class="btn-sm-strip" onclick="signOut()">Sign Out</button>
     </div>
@@ -270,12 +350,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
       <button class="tab-btn" onclick="switchTab('trade',this)">Trade Helper</button>
       <button class="tab-btn" onclick="switchTab('compare',this)">Compare</button>
       <button class="tab-btn" onclick="switchTab('search',this)">Search</button>
+      <button class="tab-btn" onclick="switchTab('needscards',this)">⭐ Needs Cards</button>
+      <button class="tab-btn" onclick="switchTab('dupecards',this)">⭐ Dupe Cards</button>
     </div>
     <div id="tab-collect"></div>
     <div id="tab-needs" style="display:none;"></div>
     <div id="tab-trade" style="display:none;"></div>
     <div id="tab-compare" style="display:none;"></div>
     <div id="tab-search" style="display:none;"></div>
+    <div id="tab-needscards" style="display:none;"></div>
+    <div id="tab-dupecards" style="display:none;"></div>
   </div>
 </div>
 
@@ -399,7 +483,13 @@ async function init(){
 async function afterLogin(){
   await loadMySheets();
   await loadAllUsersSheets();
-  showHome();
+  // First time user - no sheets yet means we need a display name
+  if(!mySheets.length){
+    openModal('display-name-modal');
+    document.getElementById('display-name-input').focus();
+  } else {
+    showHome();
+  }
 }
 
 // ── DATA ──
@@ -420,10 +510,40 @@ async function loadAllUsersSheets(){
   });
 }
 
-async function createSheet(name){
-  const {data, error} = await supa.from('sheets').insert({user_id: currentUser.id, account_name: name, collected:{}, dupes:{}}).select().single();
+async function createSheet(name, displayName){
+  const dname = displayName || mySheets[0]?.display_name || currentUser.email;
+  const {data, error} = await supa.from('sheets').insert({user_id: currentUser.id, user_email: currentUser.email, display_name: dname, account_name: name, collected:{}, dupes:{}}).select().single();
   if(error){ showToast('Error creating sheet'); return; }
   mySheets.push(data);
+}
+
+function openChangeName(){
+  const current = mySheets[0]?.display_name || '';
+  document.getElementById('change-name-input').value = current;
+  openModal('change-name-modal');
+  setTimeout(()=>document.getElementById('change-name-input').focus(), 100);
+}
+
+async function confirmChangeName(){
+  const val = document.getElementById('change-name-input').value.trim();
+  if(!val){ showToast('Please enter a name!'); return; }
+  // Update all of this user's sheets with the new display name
+  const {error} = await supa.from('sheets').update({display_name: val}).eq('user_id', currentUser.id);
+  if(error){ showToast('Error saving name!'); return; }
+  mySheets.forEach(sh => sh.display_name = val);
+  await loadAllUsersSheets();
+  renderHomeScreen();
+  closeModal('change-name-modal');
+  showToast('Display name updated to: ' + val);
+}
+
+async function confirmDisplayName(){
+  const val = document.getElementById('display-name-input').value.trim();
+  if(!val){ showToast('Please enter a display name!'); return; }
+  closeModal('display-name-modal');
+  await createSheet('Account 1', val);
+  await loadAllUsersSheets();
+  showHome();
 }
 
 async function saveCurrentSheet(){
@@ -466,12 +586,12 @@ function renderHomeScreen(){
   const seen = new Set();
   Object.entries(allUsersSheets).forEach(([uid, sheets])=>{
     if(seen.has(uid)) return; seen.add(uid);
-    const email = sheets[0]?.user_email || uid.slice(0,8)+'...';
+    const displayName = sheets[0]?.display_name || sheets[0]?.user_email || uid.slice(0,8)+'...';
     const totalCollected = sheets.reduce((a,sh)=>a+Object.values(sh.collected||{}).filter(Boolean).length,0);
     const isMe = uid === currentUser?.id;
     const card = document.createElement('div');
     card.className = 'user-card' + (isMe?' mine':'');
-    card.innerHTML = `<div class="user-card-name">${isMe ? '👤 Me' : '👥 '+email}</div>
+    card.innerHTML = `<div class="user-card-name">${isMe ? '👤 '+displayName : '👥 '+displayName}</div>
       <div class="user-card-meta">${sheets.length} sheet(s) · ${totalCollected} collected</div>
       ${isMe?'<span class="user-card-badge">MY TRACKER</span>':''}`;
     card.onclick = ()=>{ viewTracker(uid, email, sheets); };
@@ -489,7 +609,8 @@ function viewTracker(uid, email, sheets){
   viewingEmail = email;
   viewingSheets = sheets;
   currentSheetIdx = 0;
-  document.getElementById('viewing-as-label').textContent = 'Viewing: ' + (uid===currentUser?.id ? 'My Tracker' : email);
+  const dname = sheets[0]?.display_name || email;
+  document.getElementById('viewing-as-label').textContent = 'Viewing: ' + (uid===currentUser?.id ? 'My Tracker' : dname+"'s Tracker");
   document.getElementById('readonly-badge').style.display = isReadOnly() ? 'inline' : 'none';
   renderSheets();
   renderAll();
@@ -555,7 +676,9 @@ function switchTab(tab,btn){
   activeTab=tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['collect','needs','trade','compare','search'].forEach(t=>{ document.getElementById('tab-'+t).style.display=(t===tab?'block':'none'); });
+  ['collect','needs','trade','compare','search','needscards','dupecards'].forEach(t=>{ document.getElementById('tab-'+t).style.display=(t===tab?'block':'none'); });
+  if(tab==='needscards') renderNeedsCards();
+  if(tab==='dupecards') renderDupeCards();
 }
 
 // ── COLLECT ──
@@ -716,6 +839,162 @@ function renderSearch(q){
     grid.appendChild(card);
   }); });
   if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No cards found.'; grid.appendChild(em); }
+}
+
+// ── FANCY NEEDS & DUPE CARDS ──
+function buildFancyCard(starLevel, ownerName, subtitle, rows, mode){
+  const starStr = '★'.repeat(starLevel);
+  const isEmpty = !rows.length;
+  const totalLabel = mode==='dupes' ? rows.reduce((a,r)=>a+r.qty,0)+' Cards' : rows.length+' Cards';
+  let listHTML = isEmpty
+    ? `<div class="fc-empty">No ${starLevel}★ ${mode==='dupes'?'dupes':'needs'} found.</div>`
+    : rows.map((r,i)=>`<div class="fc-row">
+        <span class="fc-rownum">${String(i+1).padStart(2,'0')}</span>
+        <span class="fc-name">${r.name}${r.gold?'<span class="fc-gold-tag">GOLD</span>':''}</span>
+        ${mode==='dupes'?`<span class="fc-qty">${r.qty}</span>`:''}
+      </div>`).join('');
+  return `<div class="dupe-card card-${starLevel}">
+    <div class="fc-header">
+      <span class="fc-stars">${starStr}</span>
+      <div class="fc-divider"></div>
+      <div class="fc-owner">${ownerName}'s</div>
+      <div class="fc-title">${starLevel} Star ${mode==='dupes'?'Dupe':'Needs'} List</div>
+      <div class="fc-subtitle">${subtitle}</div>
+    </div>
+    <div class="fc-list">${listHTML}</div>
+    <div class="fc-footer">
+      <span class="fc-footer-label">Total</span>
+      <span class="fc-total">${totalLabel}</span>
+    </div>
+  </div>`;
+}
+
+function getUserOptions(){
+  let opts = '<option value="me">My Sheets</option>';
+  Object.entries(allUsersSheets).forEach(([uid, sheets])=>{
+    if(uid === currentUser?.id) return;
+    const name = sheets[0]?.display_name || sheets[0]?.user_email || uid.slice(0,8);
+    opts += `<option value="${uid}">${name}</option>`;
+  });
+  return opts;
+}
+
+function getSheetOptions(uid){
+  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  let opts = '<option value="all">All Sheets</option>';
+  sheets.forEach((sh,i)=>{ opts+=`<option value="${i}">${sh.account_name||'Account '+(i+1)}</option>`; });
+  return opts;
+}
+
+function renderNeedsCards(){
+  const cont = document.getElementById('tab-needscards');
+  cont.innerHTML = `<div class="fancy-controls">
+    <span class="fancy-label">Player:</span>
+    <select class="fancy-select" id="nc-user-sel" onchange="updateNeedsSheetSel()">${getUserOptions()}</select>
+    <span class="fancy-label">Sheet:</span>
+    <select class="fancy-select" id="nc-sheet-sel" onchange="drawNeedsCards()">${getSheetOptions('me')}</select>
+    <button class="fc-share-btn" onclick="shareNeedsList()">📋 Copy List</button>
+  </div>
+  <div class="fancy-cards-wrap" id="nc-cards"></div>`;
+  drawNeedsCards();
+}
+
+function updateNeedsSheetSel(){
+  const uid = document.getElementById('nc-user-sel').value;
+  document.getElementById('nc-sheet-sel').innerHTML = getSheetOptions(uid);
+  drawNeedsCards();
+}
+
+function drawNeedsCards(){
+  const uid = document.getElementById('nc-user-sel')?.value || 'me';
+  const sheetIdx = document.getElementById('nc-sheet-sel')?.value || 'all';
+  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : (sheets[0]?.display_name||'Their');
+
+  const needed = {4:[],5:[],6:[]};
+  SETS.forEach((set,si)=>{
+    set.cards.forEach((c,ci)=>{
+      if(c[1] < 4) return;
+      const k = si+'-'+ci;
+      const wantsIt = sheetList.some(sh=>!sh.collected?.[k]);
+      if(wantsIt) needed[c[1]].push({name:c[0], gold:c[2]});
+    });
+  });
+
+  const wrap = document.getElementById('nc-cards');
+  wrap.innerHTML = [4,5,6].map(star=>buildFancyCard(star, ownerName, 'Wanted Cards', needed[star], 'needs')).join('');
+}
+
+function renderDupeCards(){
+  const cont = document.getElementById('tab-dupecards');
+  cont.innerHTML = `<div class="fancy-controls">
+    <span class="fancy-label">Player:</span>
+    <select class="fancy-select" id="dc-user-sel" onchange="updateDupeSheetSel()">${getUserOptions()}</select>
+    <span class="fancy-label">Sheet:</span>
+    <select class="fancy-select" id="dc-sheet-sel" onchange="drawDupeCards()">${getSheetOptions('me')}</select>
+    <button class="fc-share-btn" onclick="shareDupeList()">📋 Copy List</button>
+  </div>
+  <div class="fancy-cards-wrap" id="dc-cards"></div>`;
+  drawDupeCards();
+}
+
+function updateDupeSheetSel(){
+  const uid = document.getElementById('dc-user-sel').value;
+  document.getElementById('dc-sheet-sel').innerHTML = getSheetOptions(uid);
+  drawDupeCards();
+}
+
+function drawDupeCards(){
+  const uid = document.getElementById('dc-user-sel')?.value || 'me';
+  const sheetIdx = document.getElementById('dc-sheet-sel')?.value || 'all';
+  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : (sheets[0]?.display_name||'Their');
+
+  const dupes = {4:[],5:[],6:[]};
+  SETS.forEach((set,si)=>{
+    set.cards.forEach((c,ci)=>{
+      if(c[1] < 4) return;
+      const k = si+'-'+ci;
+      const qty = sheetList.reduce((a,sh)=>a+(sh.dupes?.[k]||0),0);
+      if(qty > 0) dupes[c[1]].push({name:c[0], gold:c[2], qty});
+    });
+  });
+
+  const wrap = document.getElementById('dc-cards');
+  wrap.innerHTML = [4,5,6].map(star=>buildFancyCard(star, ownerName, 'Available to Trade', dupes[star], 'dupes')).join('');
+}
+
+function shareNeedsList(){
+  const uid = document.getElementById('nc-user-sel')?.value || 'me';
+  const sheetIdx = document.getElementById('nc-sheet-sel')?.value || 'all';
+  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||'My') : (sheets[0]?.display_name||'Their');
+  const lines = [ownerName+"'s Needs List (4★-6★)", '---'];
+  [4,5,6].forEach(star=>{
+    const needs = [];
+    SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(c[1]!==star) return; const k=si+'-'+ci; if(sheetList.some(sh=>!sh.collected?.[k])) needs.push(c[0]+(c[2]?' [GOLD]':'')); }); });
+    if(needs.length){ lines.push(`
+${star}★:`); needs.forEach(n=>lines.push('  • '+n)); }
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Needs list copied!')).catch(()=>showToast('Copy failed'));
+}
+
+function shareDupeList(){
+  const uid = document.getElementById('dc-user-sel')?.value || 'me';
+  const sheetIdx = document.getElementById('dc-sheet-sel')?.value || 'all';
+  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||'My') : (sheets[0]?.display_name||'Their');
+  const lines = [ownerName+"'s Dupe List (4★-6★)", '---'];
+  [4,5,6].forEach(star=>{
+    const dupes = [];
+    SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(c[1]!==star) return; const k=si+'-'+ci; const qty=sheetList.reduce((a,sh)=>a+(sh.dupes?.[k]||0),0); if(qty>0) dupes.push(c[0]+(c[2]?' [GOLD]':'')+' x'+qty); }); });
+    if(dupes.length){ lines.push(star+'★:'); dupes.forEach(d=>lines.push('  - '+d)); }
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Dupe list copied!')).catch(()=>showToast('Copy failed'));
 }
 
 // ── DARK MODE ──
