@@ -630,9 +630,25 @@ async function afterLogin(){
   await loadAllUsersSheets();
   loadWishlist();
   loadCooldown();
-  loadCardSize();
-  loadListView();
-  loadTheme();
+  // Load appearance settings
+  try{
+    const sz=localStorage.getItem('simpsons-cardsize')||'normal';
+    cardSize=sz;
+    document.body.classList.remove('cards-compact','cards-large');
+    if(sz==='compact') document.body.classList.add('cards-compact');
+    if(sz==='large') document.body.classList.add('cards-large');
+  }catch(e){}
+  try{
+    const lv=localStorage.getItem('simpsons-listview')==='1';
+    listView=lv;
+    document.body.classList.toggle('list-view',lv);
+  }catch(e){}
+  try{
+    const t=localStorage.getItem('simpsons-theme')||'';
+    document.body.classList.remove('dark','theme-simpsons');
+    if(t==='dark') document.body.classList.add('dark');
+    else if(t==='theme-simpsons') document.body.classList.add('theme-simpsons');
+  }catch(e){}
   if(!mySheets.length){
     openModal('display-name-modal');
     document.getElementById('display-name-input').focus();
