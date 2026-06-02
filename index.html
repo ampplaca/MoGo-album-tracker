@@ -117,9 +117,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 .set-header:hover{background:var(--yellow-light);}
 .set-title{font-weight:700;font-size:.92rem;flex:1;}
 .set-prog-wrap{display:flex;align-items:center;gap:6px;}
-.set-prog-track{width:70px;height:6px;background:var(--progress-track);border-radius:3px;overflow:hidden;}
-.set-prog-fill{height:100%;background:var(--yellow);transition:width .3s;}
-.set-prog-label{font-size:.72rem;color:var(--text-muted);}
+.set-prog-track{display:none;}
+.set-prog-fill{display:none;}
+.set-prog-label{font-size:.78rem;font-weight:700;color:var(--text-muted);}
+.set-header{position:relative;overflow:hidden;}
+.set-header-bg{position:absolute;left:0;top:0;height:100%;border-radius:0;transition:width .5s cubic-bezier(.4,0,.2,1),background .5s;z-index:0;pointer-events:none;}
+.set-header>*{position:relative;z-index:1;}
 .set-chevron{font-size:.78rem;color:var(--text-muted);transition:transform .2s;}
 .set-chevron.open{transform:rotate(90deg);}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;padding:10px 14px 14px;}
@@ -937,11 +940,19 @@ function renderCollect(){
     const missing = cards.filter((_,ci)=>!sh.collected?.[si+'-'+ci]).length;
     const closeToComplete = missing>0&&missing<=2;
     const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete almost-done':'');
+    // Progress bar color: interpolate from light green (1 card) to dark green (all cards)
+    const r1=200,g1=240,b1=200; // light green ~1 card
+    const r2=46,g2=125,b2=50;   // dark green ~complete
+    const t=pct/100;
+    const r=Math.round(r1+(r2-r1)*t);
+    const g=Math.round(g1+(g2-g1)*t);
+    const b=Math.round(b1+(b2-b1)*t);
+    const fillColor=pct===0?'transparent':`rgb(${r},${g},${b})`;
     const hdr = document.createElement('div'); hdr.className='set-header';
-    hdr.innerHTML=`<span class="set-chevron open" id="chev-${si}">▶</span>
+    hdr.innerHTML=`<div class="set-header-bg" style="width:${pct}%;background:${fillColor};opacity:0.55;"></div>
+      <span class="set-chevron open" id="chev-${si}">▶</span>
       <span class="set-title">Set ${si+1}: ${set.name}</span>
       <div class="set-prog-wrap">
-        <div class="set-prog-track"><div class="set-prog-fill" style="width:${pct}%"></div></div>
         <span class="set-prog-label">${collectedCount}/${cards.length}</span>
       </div>`;
     hdr.onclick=()=>{
