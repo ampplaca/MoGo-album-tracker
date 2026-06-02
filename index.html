@@ -961,9 +961,9 @@ function renderCollect(){
       const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc)&&(fGold?c[2]:true)&&(fWish?isWishlist:true);
       if(!show) return;
       const card=document.createElement('div');
+      const isWL = !!wishlistCards[si+'-'+ci];
       card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'')+(isWL?' wishlist':'');
       const stars='★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]));
-      const isWL = !!wishlistCards[si+'-'+ci];
       card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}
         ${isWL?'<span class="wishlist-pin">❤️</span>':''}
         <div class="card-name">${c[0]}</div>
