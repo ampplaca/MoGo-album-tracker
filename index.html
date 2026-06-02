@@ -672,6 +672,14 @@ async function signOut(){
 async function init(){
   show('loading-screen');
 
+  // Check for public read-only ?user= param
+  const urlParams = new URLSearchParams(window.location.search);
+  const publicUser = urlParams.get('user');
+  if(publicUser){
+    await loadPublicView(publicUser);
+    return;
+  }
+
   // Handle magic link token in URL hash
   const hash = window.location.hash;
   if(hash && hash.includes('access_token')){
@@ -695,6 +703,40 @@ async function init(){
       await afterLogin();
     }
   });
+}
+
+async function loadPublicView(displayName){
+  show('loading-screen');
+  // Find sheets by display_name
+  const {data, error} = await supa.from('sheets').select('*').eq('display_name', displayName);
+  if(error||!data||!data.length){
+    document.getElementById('loading-screen').innerHTML=`
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:2rem;margin-bottom:12px;">🍩</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Tracker not found</div>
+        <div style="color:var(--text-muted);margin-bottom:20px;">No tracker found for "<b>${displayName}</b>"</div>
+        <a href="${window.location.pathname}" style="color:var(--yellow-dark);font-weight:700;">← Go to Login</a>
+      </div>`;
+    return;
+  }
+  // Set up read-only view
+  const uid = data[0].user_id;
+  allUsersSheets[uid] = data;
+  viewingUserId = uid;
+  viewingSheets = data;
+  currentSheetIdx = 0;
+  // Fake currentUser so isReadOnly works
+  currentUser = {id:'__public__', email:'guest'};
+  document.getElementById('viewing-as-label').textContent = displayName+"'s Tracker (public view)";
+  document.getElementById('readonly-badge').style.display='inline';
+  document.getElementById('home-user-email').textContent='';
+  // Hide home/switch buttons, show login link
+  const topBtns = document.querySelector('.top-btns');
+  if(topBtns) topBtns.innerHTML=`<a href="${window.location.pathname}" style="font-size:.8rem;padding:5px 12px;border:2px solid #ccc;border-radius:7px;background:#fff;color:#333;font-weight:600;text-decoration:none;">Sign In</a>`;
+  loadTheme();
+  renderSheets();
+  renderAll();
+  show('app');
 }
 
 async function afterLogin(){
@@ -1312,13 +1354,25 @@ function buildFancyCard(starLevel, ownerName, subtitle, rows, mode){
 }
 
 function getUserOptions(){
-  let opts = '<option value="me">My Sheets</option>';
+  let opts = '<option value="me">All My Sheets</option>';
+  // Add own individual sheets
+  if(mySheets.length>1){
+    mySheets.forEach((sh,i)=>{
+      opts += `<option value="me-${i}">↳ ${sh.account_name||'Account '+(i+1)} (me)</option>`;
+    });
+  }
   Object.entries(allUsersSheets).forEach(([uid, sheets])=>{
     if(uid === currentUser?.id) return;
     const name = sheets[0]?.display_name || sheets[0]?.user_email || uid.slice(0,8);
     opts += `<option value="${uid}">${name}</option>`;
   });
   return opts;
+}
+
+function getSheetsForOption(val){
+  if(val==='me') return mySheets;
+  if(val.startsWith('me-')){ const i=parseInt(val.slice(3)); return [mySheets[i]]; }
+  return allUsersSheets[val]||[];
 }
 
 function getSheetOptions(uid){
@@ -1351,9 +1405,9 @@ function updateNeedsSheetSel(){
 function drawNeedsCards(){
   const uid = document.getElementById('nc-user-sel')?.value || 'me';
   const sheetIdx = document.getElementById('nc-sheet-sel')?.value || 'all';
-  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheets = getSheetsForOption(uid);
   const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
-  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : (sheets[0]?.display_name||'Their');
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : uid.startsWith('me-') ? (sheets[0]?.account_name||'My Account') : (sheets[0]?.display_name||'Their');
 
   const needed = {4:[],5:[],6:[]};
   SETS.forEach((set,si)=>{
@@ -1392,9 +1446,9 @@ function updateDupeSheetSel(){
 function drawDupeCards(){
   const uid = document.getElementById('dc-user-sel')?.value || 'me';
   const sheetIdx = document.getElementById('dc-sheet-sel')?.value || 'all';
-  const sheets = uid==='me' ? mySheets : (allUsersSheets[uid]||[]);
+  const sheets = getSheetsForOption(uid);
   const sheetList = sheetIdx==='all' ? sheets : [sheets[parseInt(sheetIdx)]];
-  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : (sheets[0]?.display_name||'Their');
+  const ownerName = uid==='me' ? (mySheets[0]?.display_name||currentUser?.email||'My') : uid.startsWith('me-') ? (sheets[0]?.account_name||'My Account') : (sheets[0]?.display_name||'Their');
 
   const dupes = {4:[],5:[],6:[]};
   SETS.forEach((set,si)=>{
@@ -1641,11 +1695,16 @@ function showWhoPopup(title, rows){
 function showWhoHas(si,ci,c){
   const k=si+'-'+ci;
   const rows=[];
+  // Check each sheet individually (including own other sheets)
   Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
-    if(uid===currentUser?.id) return;
-    const name=sheets[0]?.display_name||uid.slice(0,8);
-    const qty=sheets.reduce((a,sh)=>a+(sh.dupes?.[k]||0),0);
-    if(qty>0) rows.push({name,qty:'×'+qty+' dupe'+(qty>1?'s':'')});
+    const isMe = uid===currentUser?.id;
+    sheets.forEach((sh,idx)=>{
+      // Skip the currently viewed sheet
+      if(isMe && idx===currentSheetIdx) return;
+      const qty=sh.dupes?.[k]||0;
+      const label = isMe ? (sh.account_name||'Account '+(idx+1))+' (me)' : (sheets[0]?.display_name||uid.slice(0,8));
+      if(qty>0) rows.push({name:label, qty:'×'+qty+' dupe'+(qty>1?'s':'')});
+    });
   });
   showWhoPopup('👥 Who has "'+c[0]+'" as a dupe?',rows);
 }
@@ -1653,10 +1712,13 @@ function showWhoNeeds(si,ci,c){
   const k=si+'-'+ci;
   const rows=[];
   Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
-    if(uid===currentUser?.id) return;
-    const name=sheets[0]?.display_name||uid.slice(0,8);
-    const needs=sheets.some(sh=>!sh.collected?.[k]);
-    if(needs) rows.push({name,qty:'Needs it'});
+    const isMe = uid===currentUser?.id;
+    sheets.forEach((sh,idx)=>{
+      if(isMe && idx===currentSheetIdx) return;
+      const needs=!sh.collected?.[k];
+      const label = isMe ? (sh.account_name||'Account '+(idx+1))+' (me)' : (sheets[0]?.display_name||uid.slice(0,8));
+      if(needs) rows.push({name:label, qty:'Needs it'});
+    });
   });
   showWhoPopup('🔍 Who needs "'+c[0]+'"?',rows);
 }
@@ -1670,8 +1732,11 @@ function checkTradeMatches(){
       const k=si+'-'+ci;
       if(sh.collected?.[k]) return;
       const someoneHasIt = Object.entries(allUsersSheets).some(([uid,sheets])=>{
-        if(uid===currentUser?.id) return false;
-        return sheets.some(s=>(s.dupes?.[k]||0)>0);
+        return sheets.some((s,idx)=>{
+          // Skip current sheet
+          if(uid===currentUser?.id && idx===currentSheetIdx) return false;
+          return (s.dupes?.[k]||0)>0;
+        });
       });
       if(someoneHasIt) tradeMatchKeys.add(k);
     });
@@ -1921,7 +1986,7 @@ function renderSettings(){
   </div>`;
   // Set invite URL
   const urlBox = document.getElementById('invite-url-box');
-  if(urlBox) urlBox.value = window.location.origin + window.location.pathname;
+  if(urlBox) urlBox.value = getMyPublicUrl();
   // Cooldown reset time
   const now=new Date();
   const midnight=new Date(now); midnight.setHours(24,0,0,0);
@@ -1932,15 +1997,22 @@ function renderSettings(){
 }
 
 // ── INVITE LINK ──
+function getMyPublicUrl(){
+  const name = mySheets[0]?.display_name || '';
+  if(!name) return window.location.origin + window.location.pathname;
+  return window.location.origin + window.location.pathname + '?user=' + encodeURIComponent(name);
+}
+
 function copyInviteLink(){
-  const url = window.location.origin + window.location.pathname;
-  navigator.clipboard.writeText(url).then(()=>showToast('Link copied! Share it with your group.')).catch(()=>showToast('Copy failed'));
+  const url = getMyPublicUrl();
+  navigator.clipboard.writeText(url).then(()=>showToast('Public link copied! Anyone can view your tracker with this.')).catch(()=>showToast('Copy failed'));
 }
 
 function shareInviteLink(){
-  const url = window.location.origin + window.location.pathname;
+  const url = getMyPublicUrl();
+  const name = mySheets[0]?.display_name || 'My';
   if(navigator.share){
-    navigator.share({title:'Simpsons Go Tracker', text:'Join our Simpsons Go sticker tracker!', url});
+    navigator.share({title:name+"'s Simpsons Go Tracker", text:'View '+name+"'s Simpsons Go sticker tracker!", url});
   } else {
     copyInviteLink();
   }
