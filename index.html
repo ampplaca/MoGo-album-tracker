@@ -113,8 +113,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 
 /* SETS */
 .set-block{background:var(--card-bg);border:2px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
-.set-header{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
-.set-header:hover{background:var(--yellow-light);}
+.set-header{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;text-align:left;}
+.set-header:hover .set-header-bg{opacity:0.5!important;}
 .set-title{font-weight:700;font-size:.92rem;flex:1;}
 .set-prog-wrap{display:flex;align-items:center;gap:6px;}
 .set-prog-track{display:none;}
@@ -187,12 +187,13 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
 
 /* ── WISHLIST ── */
 .card-item.wishlist{box-shadow:0 0 0 2px #e53935,0 0 8px #e5393566;}
+.chip-trade-match{border-color:#16a34a!important;background:#dcfce7!important;color:#14532d!important;font-weight:700;}
+body.dark .chip-trade-match{background:#14532d!important;color:#86efac!important;}
 .wishlist-pin{position:absolute;top:3px;left:5px;font-size:.7rem;}
 
 /* ── CLOSEST TO COMPLETE ── */
-.set-block.close-to-complete{border-color:#4caf50;box-shadow:0 0 0 2px #4caf5044;}
-.set-block.almost-done .set-header{background:linear-gradient(90deg,#e8f5e9,transparent);}
-body.dark .set-block.almost-done .set-header{background:linear-gradient(90deg,#1b3a1b,transparent);}
+/* close-to-complete just adds a green border glow - fill handled by header-bg */
+.set-block.close-to-complete{border-color:#4caf50;}
 
 /* ── LOCKED SHEET ── */
 .locked-banner{background:#e53935;color:#fff;text-align:center;padding:6px;font-size:.82rem;font-weight:700;}
@@ -410,6 +411,8 @@ body.list-view .card-dupe-row{margin:0;}
     <input class="auth-input" id="auth-email" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
     <button class="btn-yellow" onclick="sendMagicLink()">Send Magic Link</button>
     <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-divider"><span>or</span></div>
+    <button class="btn-yellow" style="background:#888;border-color:#666;" onclick="enterDemoMode()">🧪 Demo Mode (no login)</button>
   </div>
 </div>
 
@@ -554,12 +557,39 @@ let confettiTimer = null;
 let cooldownCount = 0;
 let wishlistCards = {};       // key -> true
 let accentColor = null;
+let tradeMatchKeys = new Set(); // keys where someone in group has a dupe you need
 
 function isReadOnly(){ return viewingUserId !== currentUser?.id; }
 function currentSheets(){ return isReadOnly() ? viewingSheets : mySheets; }
 function currentSheet(){ return currentSheets()[currentSheetIdx] || {collected:{},dupes:{},account_name:''}; }
 
 // ── AUTH ──
+function enterDemoMode(){
+  currentUser = {id:'demo-user', email:'demo@test.com'};
+  mySheets = [{
+    id:'demo-sheet-1', user_id:'demo-user', user_email:'demo@test.com',
+    display_name:'Demo User', account_name:'My Account',
+    collected:{'0-0':true,'0-1':true,'0-2':true,'1-0':true,'1-1':true,'2-0':true,'12-8':true,'13-7':true},
+    dupes:{'0-0':2,'1-0':1,'12-8':1}
+  }];
+  allUsersSheets = {
+    'demo-user': mySheets,
+    'friend-1':[{id:'f1',user_id:'friend-1',display_name:'Bart',account_name:'Account 1',
+      collected:{'0-0':true,'0-3':true,'0-4':true,'1-0':true,'3-0':true},
+      dupes:{'0-3':2,'3-0':1}}],
+    'friend-2':[{id:'f2',user_id:'friend-2',display_name:'Lisa',account_name:'Account 1',
+      collected:{'0-0':true,'0-1':true,'0-2':true,'0-3':true,'0-4':true,'0-5':true,'0-6':true,'0-7':true,'0-8':true},
+      dupes:{'0-0':3,'0-1':1}}],
+  };
+  loadWishlist(); loadCooldown();
+  try{const sz=localStorage.getItem('simpsons-cardsize')||'normal';cardSize=sz;document.body.classList.remove('cards-compact','cards-large');if(sz==='compact')document.body.classList.add('cards-compact');if(sz==='large')document.body.classList.add('cards-large');}catch(e){}
+  try{const lv=localStorage.getItem('simpsons-listview')==='1';listView=lv;document.body.classList.toggle('list-view',lv);}catch(e){}
+  document.getElementById('viewing-as-label').textContent='Demo Mode';
+  document.getElementById('home-user-email').textContent='demo@test.com';
+  viewTracker('demo-user','Demo User',mySheets);
+  showToast('🧪 Demo Mode — data is not saved');
+}
+
 async function signInWithDiscord(){
   const {error} = await supa.auth.signInWithOAuth({
     provider: 'discord',
@@ -938,18 +968,19 @@ function renderCollect(){
     const collectedCount = cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
     const pct = Math.round(collectedCount/cards.length*100);
     const missing = cards.filter((_,ci)=>!sh.collected?.[si+'-'+ci]).length;
-    const closeToComplete = missing>0&&missing<=2;
-    const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete almost-done':'');
-    // Progress bar color: interpolate from light green (1 card) to dark green (all cards)
-    const r1=200,g1=240,b1=200; // light green ~1 card
-    const r2=46,g2=125,b2=50;   // dark green ~complete
-    const t=pct/100;
-    const r=Math.round(r1+(r2-r1)*t);
-    const g=Math.round(g1+(g2-g1)*t);
-    const b=Math.round(b1+(b2-b1)*t);
-    const fillColor=pct===0?'transparent':`rgb(${r},${g},${b})`;
+    const closeToComplete = missing > 0 && missing <= 2;
+    const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete':'');
+    // Interpolate from #86efac (mint) to #16a34a (dark green) based on progress
+    let fillColor = 'transparent';
+    if(pct > 0){
+      const t = pct / 100;
+      const r = Math.round(0x86 + (0x16 - 0x86) * t);
+      const g = Math.round(0xef + (0xa3 - 0xef) * t);
+      const b = Math.round(0xac + (0x4a - 0xac) * t);
+      fillColor = `rgb(${r},${g},${b})`;
+    }
     const hdr = document.createElement('div'); hdr.className='set-header';
-    hdr.innerHTML=`<div class="set-header-bg" style="width:${pct}%;background:${fillColor};opacity:0.55;"></div>
+    hdr.innerHTML=`<div class="set-header-bg" style="width:100%;background:${pct>0?fillColor:'transparent'};opacity:${pct>0?0.45:0};transition:opacity .4s,background .4s;"></div>
       <span class="set-chevron open" id="chev-${si}">▶</span>
       <span class="set-title">Set ${si+1}: ${set.name}</span>
       <div class="set-prog-wrap">
@@ -985,7 +1016,11 @@ function renderCollect(){
           <button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1)">+</button>
           ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]*(c[2]?2:1)}⭐)</span>`:''}
         </div>`:`<div class="card-dupe-row"><span class="dupe-count">${dupes>0?'×'+dupes+' dupe':''}</span></div>`}`;
-      if(!ro) card.onclick=()=>toggleCollect(si,ci);
+      if(!ro) card.onclick=()=>{
+    card.classList.add('flip-anim');
+    card.addEventListener('animationend',()=>card.classList.remove('flip-anim'),{once:true});
+    toggleCollect(si,ci);
+  };
       if(!ro) card.oncontextmenu=(e)=>{e.preventDefault();showCardContextMenu(e,si,ci,c,collected,isWL,dupes);};
       grid.appendChild(card);
     });
@@ -1010,8 +1045,8 @@ function renderNeeds(){
     const goldHTML = gold.length ? `<div class="needs-tier" style="margin-top:8px;">⭐ ${star}-Star GOLD (${gold.length})</div><div class="needs-chips" id="nc-g-${star}"></div>` : '';
     block.innerHTML=`<div class="needs-tier">${'★'.repeat(star)} ${star}-Star (${normal.length})</div><div class="needs-chips" id="nc-${star}"></div>${goldHTML}`;
     const chips=block.querySelector('#nc-'+star);
-    normal.forEach(c=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=c.name; chip.title='Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); chips.appendChild(chip); });
-    if(gold.length){ const gc=block.querySelector('#nc-g-'+star); gold.forEach(c=>{ const chip=document.createElement('span'); chip.className='chip gold-chip'; chip.textContent=c.name+' ⭐'; chip.title='Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); gc.appendChild(chip); }); }
+    normal.forEach(c=>{ const chip=document.createElement('span'); const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); chip.className='chip'+(isMatch?' chip-trade-match':''); chip.textContent=c.name+(isMatch?' 👥':''); chip.title=isMatch?'Someone has this as a dupe!':'Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); chips.appendChild(chip); });
+    if(gold.length){ const gc=block.querySelector('#nc-g-'+star); gold.forEach(c=>{ const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); const chip=document.createElement('span'); chip.className='chip gold-chip'+(isMatch?' chip-trade-match':''); chip.textContent=c.name+' ⭐'+(isMatch?' 👥':''); chip.title=isMatch?'Someone has this as a dupe!':'Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); gc.appendChild(chip); }); }
     cont.appendChild(block);
   });
   if(Object.values(tiers).every(a=>!a.length)) cont.innerHTML+='<div style="text-align:center;padding:30px;font-size:1.2rem;">🎉 D\'oh-mazing! Album complete!</div>';
@@ -1353,8 +1388,41 @@ function triggerConfetti(){
   showToast('🎉 Set Complete!');
 }
 function triggerFireworks(){
-  triggerConfetti();
-  setTimeout(()=>{ showToast("🎆 ALBUM COMPLETE! D'oh-mazing!"); },500);
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  canvas.style.display='block';
+  const ctx=canvas.getContext('2d');
+  const bursts=[];
+  for(let i=0;i<8;i++){
+    bursts.push({
+      x:Math.random()*canvas.width, y:Math.random()*canvas.height*0.6,
+      particles:Array.from({length:40},()=>({
+        vx:(Math.random()-0.5)*12, vy:(Math.random()-0.5)*12,
+        color:['#FED400','#FF6B35','#4CAF50','#2196F3','#E91E63','#FFB300','#fff'][Math.floor(Math.random()*7)],
+        size:Math.random()*6+3, life:1
+      }))
+    });
+  }
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    bursts.forEach(burst=>{
+      burst.particles.forEach(p=>{
+        p.vx*=0.97; p.vy*=0.97; p.vy+=0.15; p.life-=0.012;
+        ctx.globalAlpha=Math.max(0,p.life);
+        ctx.fillStyle=p.color;
+        ctx.beginPath();
+        ctx.arc(burst.x+p.vx*frame*0.5, burst.y+p.vy*frame*0.5, p.size,0,Math.PI*2);
+        ctx.fill();
+      });
+    });
+    ctx.globalAlpha=1;
+    frame++;
+    if(frame<300) requestAnimationFrame(draw);
+    else canvas.style.display='none';
+  }
+  draw();
+  setTimeout(()=>{ showToast("🎆 ALBUM COMPLETE! D'oh-mazing! 🍩"); },300);
 }
 
 // ── WISHLIST ──
@@ -1437,23 +1505,24 @@ function showWhoNeeds(si,ci,c){
 // ── TRADE MATCH ALERT ──
 function checkTradeMatches(){
   const sh=currentSheet();
-  let matches=0;
+  tradeMatchKeys = new Set();
   SETS.forEach((set,si)=>{
     set.cards.forEach((c,ci)=>{
       const k=si+'-'+ci;
       if(sh.collected?.[k]) return;
-      Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
-        if(uid===currentUser?.id) return;
-        const hasIt=sheets.some(s=>(s.dupes?.[k]||0)>0);
-        if(hasIt) matches++;
+      const someoneHasIt = Object.entries(allUsersSheets).some(([uid,sheets])=>{
+        if(uid===currentUser?.id) return false;
+        return sheets.some(s=>(s.dupes?.[k]||0)>0);
       });
+      if(someoneHasIt) tradeMatchKeys.add(k);
     });
   });
+  const matches = tradeMatchKeys.size;
   const banner=document.getElementById('trade-alert-banner');
   const msg=document.getElementById('trade-alert-msg');
   if(matches>0){
     banner.style.display='block';
-    msg.textContent=matches+' card'+(matches>1?'s':'')+' you need are available from group members — click to view Needs tab';
+    msg.textContent=matches+' card'+(matches>1?'s':'')+' you need are available from group members';
   } else {
     banner.style.display='none';
   }
@@ -1541,10 +1610,10 @@ function saveCooldown(){
   try{localStorage.setItem('simpsons-cooldown',JSON.stringify({date:new Date().toDateString(),count:cooldownCount}));}catch(e){}
 }
 function changeCooldown(delta){
-  cooldownCount=Math.max(0,Math.min(25,cooldownCount+delta));
+  cooldownCount=Math.max(0,Math.min(5,cooldownCount+delta));
   saveCooldown();
   renderSettings();
-  if(cooldownCount>=25) showToast('⚠️ Daily trade limit reached!');
+  if(cooldownCount>=5) showToast('⚠️ Daily trade limit reached!');
 }
 
 // ── LOCK SHEET ──
@@ -1571,28 +1640,35 @@ async function deleteCurrentSheet(){
 }
 
 // ── PRE-FORMATTED MESSAGE ──
-function generateShareMessage(){
+function generateShareMessage(mode='all'){
   const sh=currentSheet();
   const name=mySheets[0]?.display_name||currentUser?.email||'Me';
   const needs=[],dupesList=[];
+  const matches=(star)=>{
+    if(mode==='all') return true;
+    if(mode.startsWith('min')) return star>=parseInt(mode.slice(3));
+    return star===parseInt(mode);
+  };
+  const starLabel = mode==='all'?'All Stars':mode.startsWith('min')?mode.slice(3)+'★+':mode+'★ only';
   SETS.forEach((set,si)=>set.cards.forEach((c,ci)=>{
+    if(!matches(c[1])) return;
     const k=si+'-'+ci;
-    if(!sh.collected?.[k]&&c[1]>=4) needs.push(c[0]+(c[2]?'⭐':''));
+    if(!sh.collected?.[k]) needs.push(c[0]+(c[2]?'⭐':'')+' ('+c[1]+'★)');
     const d=sh.dupes?.[k]||0;
-    if(d>0&&c[1]>=4) dupesList.push(c[0]+(c[2]?'⭐':'')+' x'+d);
+    if(d>0) dupesList.push(c[0]+(c[2]?'⭐':'')+' ('+c[1]+'★) x'+d);
   }));
   const msg=[
-    '🍩 '+name+"'s Sticker Update",
+    '🍩 '+name+"'s Sticker Update ("+starLabel+')',
     '',
-    '🔍 NEEDS (4★+):',
-    ...needs.map(n=>'  • '+n),
+    '🔍 NEEDS:',
+    ...(needs.length?needs.map(n=>'  • '+n):['  None!']),
     '',
-    '🔄 DUPES (4★+):',
-    ...dupesList.map(d=>'  • '+d),
+    '🔄 DUPES:',
+    ...(dupesList.length?dupesList.map(d=>'  • '+d):['  None!']),
     '',
     '📊 Progress: '+document.getElementById('prog-label')?.textContent
   ].join('\n');
-  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied! Paste into Discord/WhatsApp')).catch(()=>showToast('Copy failed'));
+  navigator.clipboard.writeText(msg).then(()=>showToast('Copied! ('+needs.length+' needs, '+dupesList.length+' dupes)')).catch(()=>showToast('Copy failed'));
 }
 
 // ── SETTINGS TAB ──
@@ -1649,15 +1725,30 @@ function renderSettings(){
         <div class="cooldown-reset" id="cooldown-reset-label"></div>
       </div>
       <button class="cooldown-btn" onclick="changeCooldown(-1)">−</button>
-      <span class="cooldown-count">${cooldownCount}/25</span>
+      <span class="cooldown-count">${cooldownCount}/5</span>
       <button class="cooldown-btn" onclick="changeCooldown(1)">+</button>
     </div>
   </div>
   <div class="settings-panel">
     <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">📤 Share</div>
     <div class="settings-row">
-      <div><div class="settings-label">Discord/WhatsApp Message</div><div class="settings-desc">Copy your needs & dupes (4★+) as a formatted message</div></div>
-      <button class="btn-sm" onclick="generateShareMessage()">Copy</button>
+      <div><div class="settings-label">Discord/WhatsApp Message</div><div class="settings-desc">Copy needs & dupes as a formatted message</div></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+        <select id="share-star-mode" class="fancy-select" style="font-size:.78rem;padding:4px 8px;">
+          <option value="all">All stars</option>
+          <option value="1">1★ only</option>
+          <option value="2">2★ only</option>
+          <option value="3">3★ only</option>
+          <option value="4">4★ only</option>
+          <option value="5">5★ only</option>
+          <option value="6">6★ only</option>
+          <option value="min2">2★+</option>
+          <option value="min3">3★+</option>
+          <option value="min4">4★+</option>
+          <option value="min5">5★+</option>
+        </select>
+        <button class="btn-sm" onclick="generateShareMessage(document.getElementById('share-star-mode').value)">Copy</button>
+      </div>
     </div>
   </div>`;
   // Cooldown reset time
