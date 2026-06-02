@@ -107,8 +107,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 .save-indicator.saved{color:var(--green);}
 
 /* TABS */
-.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid var(--border);}
-.tab-btn{padding:7px 14px;border:none;background:transparent;cursor:pointer;font-size:.86rem;font-weight:600;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;}
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--border) transparent;cursor:grab;}
+.tabs::-webkit-scrollbar{height:3px;}
+.tabs::-webkit-scrollbar-track{background:transparent;}
+.tabs::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.tabs.grabbing{cursor:grabbing;}
+.tab-btn{padding:7px 14px;border:none;background:transparent;cursor:pointer;font-size:.86rem;font-weight:600;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;flex-shrink:0;}
 .tab-btn.active{color:var(--yellow-dark);border-bottom-color:var(--yellow-dark);}
 
 /* SETS */
@@ -116,6 +120,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 .set-header{display:flex;align-items:center;cursor:pointer;user-select:none;position:relative;overflow:hidden;min-height:36px;border-radius:10px 10px 0 0;}
 .set-header-bg{position:absolute;inset:0;background:var(--card-bg);z-index:0;}
 .set-header-fill{position:absolute;top:0;left:0;height:100%;z-index:1;transition:width .4s ease,background .4s ease;opacity:0.5;}
+.set-nav{display:flex;flex-wrap:wrap;gap:5px;padding:10px 14px;background:var(--card-bg);border-bottom:2px solid var(--border);}
+.nav-btn{font-size:.75rem;padding:4px 9px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nav-btn:hover{border-color:var(--yellow-dark);color:var(--text);}
+.nav-btn.s-active{background:var(--yellow-light);border-color:var(--yellow-dark);color:var(--text);}
+.nav-btn.s-complete{background:#16a34a;border-color:#15803d;color:#fff;}
+body.dark .nav-btn.s-complete{background:#15803d;border-color:#166534;color:#fff;}
+.set-ctrl-row{display:flex;gap:6px;padding:8px 14px 0;flex-wrap:wrap;align-items:center;}
+.set-ctrl-btn{font-size:.78rem;padding:4px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--card-bg);color:var(--text);cursor:pointer;font-weight:600;}
+.set-ctrl-btn:hover{border-color:var(--yellow-dark);}
+.set-ctrl-btn.danger{border-color:#e53935;color:#e53935;}
+.set-ctrl-btn.danger:hover{background:#e53935;color:#fff;}
+.set-ctrl-btn.success{border-color:#16a34a;color:#16a34a;}
+.set-ctrl-btn.success:hover{background:#16a34a;color:#fff;}
+.set-ctrl-sep{color:var(--border);font-size:.9rem;}
 .set-header-content{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 14px;gap:10px;}
 .set-title{font-weight:700;font-size:.92rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .set-prog-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -159,6 +177,15 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
 .trade-row{background:var(--card-bg);border:2px solid var(--border);border-radius:9px;padding:9px 14px;margin-bottom:7px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .search-input{width:100%;padding:9px 14px;border:2px solid var(--border);border-radius:9px;background:var(--card-bg);color:var(--text);font-size:.88rem;margin-bottom:12px;}
 .search-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.search-mode-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+.search-user-section{margin-bottom:16px;}
+.search-user-header{font-weight:700;font-size:.82rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.search-user-header span{flex:1;}
+.search-collected-badge{font-size:.7rem;padding:2px 7px;border-radius:8px;background:#b8f0b8;color:#1b5e20;border:1px solid #2e7d32;}
+.search-missing-badge{font-size:.7rem;padding:2px 7px;border-radius:8px;background:var(--yellow-light);color:var(--yellow-dark);border:1px solid var(--border);}
+.search-dupe-badge{font-size:.7rem;padding:2px 7px;border-radius:8px;background:var(--gold-bg);color:#7a4400;border:1px solid var(--gold);}
+.invite-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+.invite-url{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:.82rem;margin:8px 0;font-family:monospace;}
 .compare-area{display:flex;flex-direction:column;gap:10px;}
 .compare-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;}
 .compare-box textarea{width:100%;min-height:80px;border:1.5px solid var(--border);border-radius:7px;padding:8px;background:var(--bg);color:var(--text);font-size:.8rem;resize:vertical;}
@@ -459,6 +486,11 @@ body.list-view .card-dupe-row{margin:0;}
   </div>
   <div class="sheets-bar" id="sheets-bar"></div>
   <div id="locked-banner" class="locked-banner" style="display:none;">🔒 Sheet is locked — editing disabled</div>
+  <div class="set-ctrl-row">
+    <button class="set-ctrl-btn" onclick="collapseAll()">Collapse All</button>
+    <button class="set-ctrl-btn" onclick="expandAll()">Expand All</button>
+  </div>
+  <div class="set-nav" id="set-nav"></div>
   <div id="trade-alert-banner" style="display:none;" class="trade-alert-banner" onclick="switchTab('needs',document.querySelectorAll('.tab-btn')[1])">
     <strong>🔔 Trade Matches Found!</strong>
     <span id="trade-alert-msg"></span>
@@ -478,12 +510,17 @@ body.list-view .card-dupe-row{margin:0;}
           <label class="filter-item"><input type="checkbox" id="f-dupes" onchange="renderCollect()"> Dupes only</label>
           <label class="filter-item"><input type="checkbox" id="f-gold" onchange="renderCollect()"> Gold only</label>
           <label class="filter-item"><input type="checkbox" id="f-wishlist" onchange="renderCollect()"> Wishlist only</label>
+          <span style="color:var(--border);margin:0 4px;">|</span>
+          <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);">Stars:</span>
+          <label class="filter-item"><input type="checkbox" id="f-star-1" checked onchange="renderCollect()"> 1★</label>
+          <label class="filter-item"><input type="checkbox" id="f-star-2" checked onchange="renderCollect()"> 2★</label>
+          <label class="filter-item"><input type="checkbox" id="f-star-3" checked onchange="renderCollect()"> 3★</label>
+          <label class="filter-item"><input type="checkbox" id="f-star-4" checked onchange="renderCollect()"> 4★</label>
+          <label class="filter-item"><input type="checkbox" id="f-star-5" checked onchange="renderCollect()"> 5★</label>
+          <label class="filter-item"><input type="checkbox" id="f-star-6" checked onchange="renderCollect()"> 6★</label>
         </div>
       </div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;">
-        <button class="btn-sm" onclick="expandAll()">Expand All</button>
-        <button class="btn-sm" onclick="collapseAll()">Collapse All</button>
-      </div>
+
     </div>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('collect',this)">Collect</button>
@@ -897,7 +934,7 @@ async function confirmSheetName(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){ updateProgress(); checkTradeMatches(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); }
+function renderAll(){ updateProgress(); checkTradeMatches(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); buildSetNav(); }
 
 function updateProgress(){
   const sh = currentSheet();
@@ -939,6 +976,7 @@ function toggleCollect(si,ci){
   const wasCollected = !!sh.collected[k];
   sh.collected[k] = !wasCollected;
   lastAction = {type:'collect',si,ci,prev:wasCollected};
+  updateNavBtn(si);
   showUndoToast(wasCollected?'Marked missing':'Marked collected');
   // Check set completion
   if(!wasCollected){
@@ -974,6 +1012,7 @@ function renderCollect(){
   const fDup = document.getElementById('f-dupes')?.checked ?? false;
   const fGold = document.getElementById('f-gold')?.checked ?? false;
   const fWish = document.getElementById('f-wishlist')?.checked ?? false;
+  const fStars = [1,2,3,4,5,6].map(s=>(document.getElementById('f-star-'+s)?.checked ?? true));
   const ro = isReadOnly() || sheetLocked;
 
   SETS.forEach((set,si)=>{
@@ -982,7 +1021,7 @@ function renderCollect(){
     const pct = Math.round(collectedCount/cards.length*100);
     const missing = cards.filter((_,ci)=>!sh.collected?.[si+'-'+ci]).length;
     const closeToComplete = missing > 0 && missing <= 2;
-    const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete':'');
+    const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete':''); block.id='set-block-'+si;
     // Interpolate from #86efac (mint) to #16a34a (dark green) based on progress
     let fillColor = 'transparent';
     if(pct > 0){
@@ -999,12 +1038,16 @@ function renderCollect(){
     hdrFill.style.width=pct+'%';
     hdrFill.style.background=pct===0?'transparent':fillColor;
     const hdrContent = document.createElement('div'); hdrContent.className='set-header-content';
+    const isRO = isReadOnly()||sheetLocked;
     hdrContent.innerHTML=`
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="set-chevron open" id="chev-${si}">▶</span>
         <span class="set-title">Set ${si+1}: ${set.name}</span>
       </div>
-      <span class="set-prog-label">${collectedCount}/${cards.length}</span>`;
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span class="set-prog-label" id="set-count-${si}">${collectedCount}/${cards.length}</span>
+        ${!isRO?`<button class="set-ctrl-btn success" style="padding:2px 8px;font-size:.7rem;" onclick="event.stopPropagation();completeSet(${si})">✅</button><button class="set-ctrl-btn danger" style="padding:2px 8px;font-size:.7rem;" onclick="event.stopPropagation();resetSet(${si})">↺</button>`:''}
+      </div>`;
     hdr.appendChild(hdrBg);
     hdr.appendChild(hdrFill);
     hdr.appendChild(hdrContent);
@@ -1029,7 +1072,7 @@ function renderCollect(){
       const collected=!!sh.collected?.[k];
       const dupes=sh.dupes?.[k]||0;
       const isWishlist = !!wishlistCards[si+'-'+ci];
-      const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc)&&(fGold?c[2]:true)&&(fWish?isWishlist:true);
+      const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc)&&(fGold?c[2]:true)&&(fWish?isWishlist:true)&&fStars[c[1]-1];
       if(!show) return;
       const card=document.createElement('div');
       const isWL = !!wishlistCards[si+'-'+ci];
@@ -1051,7 +1094,12 @@ function renderCollect(){
       if(!ro) card.oncontextmenu=(e)=>{e.preventDefault();showCardContextMenu(e,si,ci,c,collected,isWL,dupes);};
       grid.appendChild(card);
     });
-    if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.style.padding='10px 14px'; em.textContent='No cards match filter.'; grid.appendChild(em); }
+    if(!grid.children.length){
+      // Hide the whole set block if no cards match the current filters
+      block.style.display='none';
+    } else {
+      block.style.display='';
+    }
     block.appendChild(grid);
     cont.appendChild(block);
   });
@@ -1149,21 +1197,87 @@ function compareTradeList(){
 }
 
 // ── SEARCH ──
+let searchMode = 'mine'; // 'mine' or 'all'
+
 function renderSearch(q){
   const cont=document.getElementById('tab-search');
+  // Build UI if not already there
   if(!cont.querySelector('.search-input')){
-    cont.innerHTML=`<input class="search-input" placeholder="Search cards..." oninput="renderSearch(this.value)"><div id="search-grid" class="search-results"></div>`;
+    cont.innerHTML=`
+      <div class="search-mode-row">
+        <span style="font-size:.85rem;font-weight:700;">Search:</span>
+        <button class="size-btn${searchMode==='mine'?' active':''}" onclick="setSearchMode('mine')">My Cards</button>
+        <button class="size-btn${searchMode==='all'?' active':''}" onclick="setSearchMode('all')">All Players</button>
+      </div>
+      <input class="search-input" id="search-input-box" placeholder="Search cards..." oninput="renderSearch(this.value)">
+      <div id="search-grid"></div>`;
   }
+  // Update mode buttons
+  cont.querySelectorAll('.size-btn').forEach((b,i)=>{
+    b.classList.toggle('active', (i===0&&searchMode==='mine')||(i===1&&searchMode==='all'));
+  });
   const grid=cont.querySelector('#search-grid');
   if(!grid) return;
   grid.innerHTML='';
-  if(!q.trim()) return;
-  const sh=currentSheet(); const ql=q.toLowerCase(); const ro=isReadOnly();
-  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ if(!c[0].toLowerCase().includes(ql)) return; const k=si+'-'+ci; const collected=!!sh.collected?.[k]; const dupes=sh.dupes?.[k]||0; const card=document.createElement('div'); card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':''); card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}<div class="card-name">${c[0]}</div><div style="font-size:.7rem;color:var(--text-muted)">Set ${si+1}</div><div class="card-stars">${'★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]))}</div>${!ro?`<div class="card-dupe-row"><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},-1);renderSearch(document.querySelector('.search-input').value)">−</button><span class="dupe-count">${dupes}</span><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1);renderSearch(document.querySelector('.search-input').value)">+</button></div>`:''}`;
-    if(!ro) card.onclick=()=>{ toggleCollect(si,ci); renderSearch(q); };
-    grid.appendChild(card);
-  }); });
-  if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No cards found.'; grid.appendChild(em); }
+  if(!q||!q.trim()) return;
+  const ql=q.toLowerCase();
+
+  if(searchMode==='mine'){
+    // Original single-user search
+    const sh=currentSheet(); const ro=isReadOnly()||sheetLocked;
+    const wrap=document.createElement('div'); wrap.className='search-results';
+    SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ 
+      if(!c[0].toLowerCase().includes(ql)) return;
+      const k=si+'-'+ci; const collected=!!sh.collected?.[k]; const dupes=sh.dupes?.[k]||0;
+      const card=document.createElement('div');
+      card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'');
+      card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}<div class="card-name">${c[0]}</div><div style="font-size:.7rem;color:var(--text-muted)">Set ${si+1}</div><div class="card-stars">${'★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]))}</div>${!ro?`<div class="card-dupe-row"><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},-1);renderSearch(document.getElementById('search-input-box').value)">−</button><span class="dupe-count">${dupes}</span><button class="dupe-btn" onclick="event.stopPropagation();changeDupe(${si},${ci},1);renderSearch(document.getElementById('search-input-box').value)">+</button></div>`:''}`;
+      if(!ro) card.onclick=()=>{ toggleCollect(si,ci); renderSearch(q); };
+      wrap.appendChild(card);
+    }); });
+    if(!wrap.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No cards found.'; grid.appendChild(em); }
+    else grid.appendChild(wrap);
+
+  } else {
+    // All-users search - show each user's status for the matching cards
+    SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ 
+      if(!c[0].toLowerCase().includes(ql)) return;
+      const k=si+'-'+ci;
+      const section=document.createElement('div'); section.className='search-user-section';
+      const title=document.createElement('div'); title.className='search-user-header';
+      title.innerHTML=`<span>${c[0]}${c[2]?' ⭐':''} <span style="font-weight:400;opacity:.5">· Set ${si+1} · ${'★'.repeat(c[1])}</span></span>`;
+      section.appendChild(title);
+      const row=document.createElement('div'); row.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+      Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
+        const name=sheets[0]?.display_name||uid.slice(0,6);
+        const isMe=uid===currentUser?.id;
+        const mySheetList=isMe?mySheets:sheets;
+        const collected=mySheetList.some(s=>s.collected?.[k]);
+        const dupes=mySheetList.reduce((a,s)=>a+(s.dupes?.[k]||0),0);
+        const chip=document.createElement('span');
+        if(collected&&dupes>0) chip.className='search-dupe-badge';
+        else if(collected) chip.className='search-collected-badge';
+        else chip.className='search-missing-badge';
+        chip.textContent=name+(dupes>0?' (×'+dupes+' dupe)':collected?' ✓':' ✗');
+        chip.title=isMe?'Your status':'Click to view their tracker';
+        if(!isMe) chip.onclick=()=>viewTracker(uid,name,sheets);
+        chip.style.cursor=isMe?'default':'pointer';
+        row.appendChild(chip);
+      });
+      section.appendChild(row);
+      grid.appendChild(section);
+      // Separator
+      const sep=document.createElement('hr'); sep.className='divider'; sep.style.margin='8px 0';
+      grid.appendChild(sep);
+    }); });
+    if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.textContent='No cards found.'; grid.appendChild(em); }
+  }
+}
+
+function setSearchMode(mode){
+  searchMode=mode;
+  const q=document.getElementById('search-input-box')?.value||'';
+  renderSearch(q);
 }
 
 // ── FANCY NEEDS & DUPE CARDS ──
@@ -1775,6 +1889,15 @@ function renderSettings(){
     </div>
   </div>
   <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🔗 Group Invite Link</div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:10px;">Share this link — friends open it and automatically see your group.</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input class="invite-url" id="invite-url-box" readonly style="flex:1;min-width:200px;">
+      <button class="btn-sm" onclick="copyInviteLink()">📋 Copy</button>
+      <button class="btn-sm" onclick="shareInviteLink()">📤 Share</button>
+    </div>
+  </div>
+  <div class="settings-panel">
     <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">📤 Share</div>
     <div class="settings-row">
       <div><div class="settings-label">Discord/WhatsApp Message</div><div class="settings-desc">Copy needs & dupes as a formatted message</div></div>
@@ -1796,6 +1919,9 @@ function renderSettings(){
       </div>
     </div>
   </div>`;
+  // Set invite URL
+  const urlBox = document.getElementById('invite-url-box');
+  if(urlBox) urlBox.value = window.location.origin + window.location.pathname;
   // Cooldown reset time
   const now=new Date();
   const midnight=new Date(now); midnight.setHours(24,0,0,0);
@@ -1803,6 +1929,21 @@ function renderSettings(){
   const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
   const lbl=document.getElementById('cooldown-reset-label');
   if(lbl) lbl.textContent='Resets in '+h+'h '+m+'m';
+}
+
+// ── INVITE LINK ──
+function copyInviteLink(){
+  const url = window.location.origin + window.location.pathname;
+  navigator.clipboard.writeText(url).then(()=>showToast('Link copied! Share it with your group.')).catch(()=>showToast('Copy failed'));
+}
+
+function shareInviteLink(){
+  const url = window.location.origin + window.location.pathname;
+  if(navigator.share){
+    navigator.share({title:'Simpsons Go Tracker', text:'Join our Simpsons Go sticker tracker!', url});
+  } else {
+    copyInviteLink();
+  }
 }
 
 // ── THEME ──
@@ -1855,8 +1996,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='1') switchTab('collect',document.querySelectorAll('.tab-btn')[0]);
   if(e.key==='2') switchTab('needs',document.querySelectorAll('.tab-btn')[1]);
   if(e.key==='3') switchTab('trade',document.querySelectorAll('.tab-btn')[2]);
-  if(e.key==='4') switchTab('leaderboard',document.querySelectorAll('.tab-btn')[7]);
-  if(e.key==='5') switchTab('settings',document.querySelectorAll('.tab-btn')[8]);
+  if(e.key==='4') switchTab('compare',document.querySelectorAll('.tab-btn')[3]);
+  if(e.key==='5') switchTab('search',document.querySelectorAll('.tab-btn')[4]);
+  if(e.key==='6') switchTab('needscards',document.querySelectorAll('.tab-btn')[5]);
+  if(e.key==='7') switchTab('dupecards',document.querySelectorAll('.tab-btn')[6]);
+  if(e.key==='8') switchTab('leaderboard',document.querySelectorAll('.tab-btn')[7]);
+  if(e.key==='9') switchTab('settings',document.querySelectorAll('.tab-btn')[8]);
   if(e.key==='e') expandAll();
   if(e.key==='c'&&!e.ctrlKey) collapseAll();
 });
@@ -1874,6 +2019,93 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 // ── TOAST ──
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
+
+// ── SET NAV ──
+let activeSetIdx = 0;
+
+function buildSetNav(){
+  const nav = document.getElementById('set-nav');
+  if(!nav) return;
+  nav.innerHTML = '';
+  const sh = currentSheet();
+  SETS.forEach((set,si)=>{
+    const collected = set.cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
+    const total = set.cards.length;
+    const complete = collected===total;
+    const inProgress = collected>0&&!complete;
+    const btn = document.createElement('button');
+    btn.className='nav-btn'+(complete?' s-complete':inProgress?' s-active':'');
+    btn.id='nav-btn-'+si;
+    btn.textContent=(si+1)+'. '+set.name;
+    btn.title=complete?'Complete ✓':inProgress?collected+'/'+total+' collected':'Not started';
+    btn.onclick=()=>{
+      activeSetIdx=si;
+      document.getElementById('set-block-'+si)?.scrollIntoView({behavior:'smooth',block:'start'});
+      document.getElementById('active-set-label').textContent='Active: Set '+(si+1)+' — '+set.name;
+    };
+    nav.appendChild(btn);
+  });
+}
+
+function updateNavBtn(si){
+  const sh = currentSheet();
+  const collected = SETS[si].cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
+  const total = SETS[si].cards.length;
+  const complete = collected===total;
+  const inProgress = collected>0&&!complete;
+  const btn = document.getElementById('nav-btn-'+si);
+  if(btn){
+    btn.className='nav-btn'+(complete?' s-complete':inProgress?' s-active':'');
+    btn.title=complete?'Complete ✓':inProgress?collected+'/'+total+' collected':'Not started';
+  }
+}
+
+function completeSet(si){
+  if(isReadOnly()||sheetLocked) return;
+  const sheetRef = currentSheets()[currentSheetIdx];
+  if(!sheetRef) return;
+  if(!sheetRef.collected) sheetRef.collected={};
+  SETS[si].cards.forEach((_,ci)=>{ sheetRef.collected[si+'-'+ci]=true; });
+  scheduleSave(); updateProgress(); renderCollect(); buildSetNav();
+  triggerConfetti();
+  showToast('✅ Set '+(si+1)+' marked complete!');
+}
+
+function resetSet(si){
+  if(isReadOnly()||sheetLocked) return;
+  if(!confirm('Reset Set '+(si+1)+'? All collected cards and dupes will be cleared.')) return;
+  const sheetRef = currentSheets()[currentSheetIdx];
+  if(!sheetRef) { console.error('No sheet ref!'); return; }
+  console.log('Before reset, collected keys for set '+si+':', Object.keys(sheetRef.collected||{}).filter(k=>k.startsWith(si+'-')));
+  if(!sheetRef.collected) sheetRef.collected={};
+  if(!sheetRef.dupes) sheetRef.dupes={};
+  SETS[si].cards.forEach((_,ci)=>{
+    const k=si+'-'+ci;
+    delete sheetRef.collected[k];
+    delete sheetRef.dupes[k];
+  });
+  console.log('After reset, collected keys for set '+si+':', Object.keys(sheetRef.collected||{}).filter(k=>k.startsWith(si+'-')));
+  scheduleSave(); updateProgress(); renderCollect(); buildSetNav();
+  showToast('↺ Set '+(si+1)+' reset.');
+}
+
+// ── DRAG TO SCROLL TABS ──
+(function(){
+  const tabs = document.querySelector('.tabs');
+  if(!tabs) return;
+  let isDown=false, startX, scrollLeft;
+  tabs.addEventListener('mousedown',e=>{
+    isDown=true; tabs.classList.add('grabbing');
+    startX=e.pageX-tabs.offsetLeft; scrollLeft=tabs.scrollLeft;
+  });
+  tabs.addEventListener('mouseleave',()=>{ isDown=false; tabs.classList.remove('grabbing'); });
+  tabs.addEventListener('mouseup',()=>{ isDown=false; tabs.classList.remove('grabbing'); });
+  tabs.addEventListener('mousemove',e=>{
+    if(!isDown) return; e.preventDefault();
+    const x=e.pageX-tabs.offsetLeft;
+    tabs.scrollLeft=scrollLeft-(x-startX);
+  });
+})();
 
 // ── BOOT ──
 window.addEventListener('scroll',()=>{ document.getElementById('back-to-top').classList.toggle('visible',window.scrollY>300); });
