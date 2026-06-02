@@ -16,12 +16,24 @@
   --text:#222;--text-muted:#888;
   --progress-fill:#FED400;--progress-track:#F5F0C0;
   --shadow:0 2px 8px rgba(0,0,0,0.10);
+  --accent:#FED400;--accent-dark:#E5B800;
 }
 body.dark {
   --bg:#1a1a0e;--card-bg:#232310;--border:#5a4e00;
   --text:#f5f0c0;--text-muted:#aaa;
   --blue-light:#0d2a4a;--yellow-light:#2a2500;
   --gold-bg:#2a2000;--progress-track:#2a2500;
+}
+body.theme-simpsons {
+  --bg:#FFF176;--card-bg:#fff9c4;--border:#F9A825;
+  --text:#1a237e;--text-muted:#5c6bc0;
+  --yellow:#F9A825;--yellow-dark:#F57F17;--yellow-light:#FFF9C4;
+  --progress-fill:#F9A825;--progress-track:#FFF176;
+  --accent:#F9A825;--accent-dark:#F57F17;
+}
+body.theme-simpsons.dark {
+  --bg:#1a1500;--card-bg:#2a2000;--border:#F9A825;
+  --text:#FFF176;--text-muted:#F9A825aa;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh;}
@@ -165,6 +177,106 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
 .back-to-top.visible{display:block;}
 .empty-msg{color:var(--text-muted);font-size:.83rem;padding:8px 0;}
 
+/* ── CARD FLIP ANIMATION ── */
+.card-item{transform-style:preserve-3d;transition:transform .35s,background .15s,border-color .15s;}
+.card-item.flip-anim{animation:cardflip .35s ease;}
+@keyframes cardflip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+
+/* ── WISHLIST ── */
+.card-item.wishlist{box-shadow:0 0 0 2px #e53935,0 0 8px #e5393566;}
+.wishlist-pin{position:absolute;top:3px;left:5px;font-size:.7rem;}
+
+/* ── CLOSEST TO COMPLETE ── */
+.set-block.close-to-complete{border-color:#4caf50;box-shadow:0 0 0 2px #4caf5044;}
+.set-block.almost-done .set-header{background:linear-gradient(90deg,#e8f5e9,transparent);}
+body.dark .set-block.almost-done .set-header{background:linear-gradient(90deg,#1b3a1b,transparent);}
+
+/* ── LOCKED SHEET ── */
+.locked-banner{background:#e53935;color:#fff;text-align:center;padding:6px;font-size:.82rem;font-weight:700;}
+
+/* ── LEADERBOARD ── */
+.lb-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card-bg);border:2px solid var(--border);border-radius:10px;margin-bottom:7px;}
+.lb-rank{font-size:1.1rem;width:28px;text-align:center;font-weight:700;}
+.lb-name{flex:1;font-weight:700;font-size:.92rem;}
+.lb-badges{display:flex;gap:3px;flex-wrap:wrap;}
+.lb-badge{font-size:.68rem;padding:2px 6px;border-radius:8px;background:var(--yellow);color:#222;font-weight:700;}
+.lb-stats{font-size:.78rem;color:var(--text-muted);text-align:right;}
+.lb-bar-wrap{width:80px;height:6px;background:var(--progress-track);border-radius:3px;overflow:hidden;margin-top:3px;}
+.lb-bar{height:100%;background:var(--yellow);border-radius:3px;transition:width .5s;}
+
+/* ── TRADE COOLDOWN ── */
+.cooldown-wrap{display:flex;align-items:center;gap:10px;background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:12px;}
+.cooldown-label{font-size:.85rem;font-weight:700;flex:1;}
+.cooldown-count{font-size:1.3rem;font-weight:900;color:var(--yellow-dark);min-width:32px;text-align:center;}
+.cooldown-btn{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.9rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.cooldown-btn:hover{border-color:var(--yellow-dark);}
+.cooldown-reset{font-size:.75rem;color:var(--text-muted);}
+
+/* ── WHO HAS/NEEDS POPUP ── */
+.who-popup{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;}
+.who-popup-inner{background:var(--card-bg);border-radius:14px;padding:22px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.who-popup-inner h3{margin-bottom:12px;font-size:1rem;}
+.who-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem;}
+.who-row:last-child{border-bottom:none;}
+.who-name{font-weight:700;}
+.who-qty{color:var(--gold);font-weight:700;}
+.who-empty{color:var(--text-muted);font-size:.83rem;padding:8px 0;}
+
+/* ── SETTINGS PANEL ── */
+.settings-panel{background:var(--card-bg);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:10px;}
+.settings-row:last-child{border-bottom:none;}
+.settings-label{font-size:.88rem;font-weight:600;flex:1;}
+.settings-desc{font-size:.75rem;color:var(--text-muted);}
+.toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:22px;cursor:pointer;transition:.3s;}
+.toggle-slider:before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.toggle-slider{background:var(--yellow-dark);}
+input:checked+.toggle-slider:before{transform:translateX(18px);}
+.color-picker-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .15s;}
+.color-swatch.active{border-color:var(--text);}
+.color-swatch-custom{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);cursor:pointer;overflow:hidden;padding:0;}
+.size-btns{display:flex;gap:4px;}
+.size-btn{padding:4px 10px;border-radius:6px;border:2px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.78rem;font-weight:600;}
+.size-btn.active{background:var(--yellow);border-color:var(--yellow-dark);}
+
+/* ── TRADE ALERT BANNER ── */
+.trade-alert-banner{background:linear-gradient(90deg,#1b5e20,#2e7d32);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;font-size:.85rem;cursor:pointer;}
+.trade-alert-banner strong{display:block;font-size:.95rem;margin-bottom:2px;}
+
+/* ── UNDO TOAST ── */
+.undo-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:20px;font-size:.85rem;display:flex;gap:10px;align-items:center;opacity:0;pointer-events:none;transition:opacity .3s;z-index:300;}
+.undo-toast.show{opacity:1;pointer-events:all;}
+.undo-btn-inline{background:var(--yellow);color:#222;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:700;font-size:.8rem;}
+
+/* ── CARD SIZE VARIANTS ── */
+body.cards-compact .card-grid{grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:5px;}
+body.cards-compact .card-item{padding:5px 7px;}
+body.cards-compact .card-name{font-size:.7rem;}
+body.cards-large .card-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+body.cards-large .card-item{padding:12px 14px;}
+body.cards-large .card-name{font-size:.9rem;}
+
+/* ── ANIMATED PROGRESS ── */
+.progress-fill{transition:width .5s cubic-bezier(.4,0,.2,1);}
+.set-prog-fill{transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* ── CONFETTI CANVAS ── */
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:400;}
+
+/* ── LIST VIEW ── */
+body.list-view .card-grid{display:flex;flex-direction:column;gap:4px;}
+body.list-view .card-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:7px;}
+body.list-view .card-name{flex:1;font-size:.85rem;margin:0;}
+body.list-view .card-stars{font-size:.75rem;margin:0;}
+body.list-view .gold-badge{position:static;font-size:.6rem;}
+body.list-view .card-dupe-row{margin:0;}
+
+/* ── DRAG COLLECT ── */
+.card-item.drag-hover{background:var(--yellow-light)!important;border-color:var(--yellow-dark)!important;}
+
 /* ── FANCY STAR CARDS ── */
 .fancy-cards-wrap{display:flex;flex-direction:column;gap:20px;padding:4px 0 20px;}
 .fancy-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px;}
@@ -270,6 +382,11 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
   </div>
 </div>
 
+<canvas id="confetti-canvas" style="display:none;"></canvas>
+<div class="undo-toast" id="undo-toast">
+  <span id="undo-msg">Action undone</span>
+  <button class="undo-btn-inline" onclick="doUndo()">Undo</button>
+</div>
 <div class="toast" id="toast"></div>
 <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
@@ -333,6 +450,11 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
     </div>
   </div>
   <div class="sheets-bar" id="sheets-bar"></div>
+  <div id="locked-banner" class="locked-banner" style="display:none;">🔒 Sheet is locked — editing disabled</div>
+  <div id="trade-alert-banner" style="display:none;" class="trade-alert-banner" onclick="switchTab('needs',document.querySelectorAll('.tab-btn')[1])">
+    <strong>🔔 Trade Matches Found!</strong>
+    <span id="trade-alert-msg"></span>
+  </div>
   <hr class="divider">
   <div class="tracker-view">
     <div class="controls-bar">
@@ -346,6 +468,8 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
           <label class="filter-item"><input type="checkbox" id="f-uncollected" checked onchange="renderCollect()"> Missing</label>
           <label class="filter-item"><input type="checkbox" id="f-collected" checked onchange="renderCollect()"> Collected</label>
           <label class="filter-item"><input type="checkbox" id="f-dupes" onchange="renderCollect()"> Dupes only</label>
+          <label class="filter-item"><input type="checkbox" id="f-gold" onchange="renderCollect()"> Gold only</label>
+          <label class="filter-item"><input type="checkbox" id="f-wishlist" onchange="renderCollect()"> Wishlist only</label>
         </div>
       </div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;">
@@ -361,6 +485,8 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
       <button class="tab-btn" onclick="switchTab('search',this)">Search</button>
       <button class="tab-btn" onclick="switchTab('needscards',this)">⭐ Needs Cards</button>
       <button class="tab-btn" onclick="switchTab('dupecards',this)">⭐ Dupe Cards</button>
+      <button class="tab-btn" onclick="switchTab('leaderboard',this)">🏆 Leaderboard</button>
+      <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ Settings</button>
     </div>
     <div id="tab-collect"></div>
     <div id="tab-needs" style="display:none;"></div>
@@ -369,6 +495,8 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
     <div id="tab-search" style="display:none;"></div>
     <div id="tab-needscards" style="display:none;"></div>
     <div id="tab-dupecards" style="display:none;"></div>
+    <div id="tab-leaderboard" style="display:none;"></div>
+    <div id="tab-settings" style="display:none;"></div>
   </div>
 </div>
 
@@ -404,17 +532,25 @@ const SETS = [
 ];
 
 // ── STATE ──
-let currentUser = null;       // supabase user object
-let viewingUserId = null;     // whose tracker we're viewing
+let currentUser = null;
+let viewingUserId = null;
 let viewingEmail = null;
-let mySheets = [];            // [{id, account_name, collected, dupes}]
+let mySheets = [];
 let viewingSheets = [];
 let currentSheetIdx = 0;
 let activeTab = 'collect';
 let tradeStarFilter = 'all';
 let sheetNameCallback = null;
 let saveTimer = null;
-let allUsersSheets = {};      // userId -> [{...}]
+let allUsersSheets = {};
+let lastAction = null;        // for undo
+let sheetLocked = false;
+let cardSize = 'normal';      // compact / normal / large
+let listView = false;
+let confettiTimer = null;
+let cooldownCount = 0;
+let wishlistCards = {};       // key -> true
+let accentColor = null;
 
 function isReadOnly(){ return viewingUserId !== currentUser?.id; }
 function currentSheets(){ return isReadOnly() ? viewingSheets : mySheets; }
@@ -492,7 +628,11 @@ async function init(){
 async function afterLogin(){
   await loadMySheets();
   await loadAllUsersSheets();
-  // First time user - no sheets yet means we need a display name
+  loadWishlist();
+  loadCooldown();
+  loadCardSize();
+  loadListView();
+  loadTheme();
   if(!mySheets.length){
     openModal('display-name-modal');
     document.getElementById('display-name-input').focus();
@@ -706,7 +846,7 @@ async function confirmSheetName(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){ updateProgress(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); }
+function renderAll(){ updateProgress(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); checkTradeMatches(); }
 
 function updateProgress(){
   const sh = currentSheet();
@@ -720,27 +860,46 @@ function updateProgress(){
 function switchTab(tab,btn){
   activeTab=tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  ['collect','needs','trade','compare','search','needscards','dupecards'].forEach(t=>{ document.getElementById('tab-'+t).style.display=(t===tab?'block':'none'); });
+  if(btn) btn.classList.add('active');
+  ['collect','needs','trade','compare','search','needscards','dupecards','leaderboard','settings'].forEach(t=>{ document.getElementById('tab-'+t).style.display=(t===tab?'block':'none'); });
   if(tab==='needscards') renderNeedsCards();
   if(tab==='dupecards') renderDupeCards();
+  if(tab==='leaderboard') renderLeaderboard();
+  if(tab==='settings') renderSettings();
 }
 
 // ── COLLECT ──
 function toggleCollect(si,ci){
-  if(isReadOnly()) return;
+  if(isReadOnly()||sheetLocked) return;
   const sh = currentSheet();
   const k = si+'-'+ci;
   if(!sh.collected) sh.collected={};
-  sh.collected[k] = !sh.collected[k];
+  const wasCollected = !!sh.collected[k];
+  sh.collected[k] = !wasCollected;
+  lastAction = {type:'collect',si,ci,prev:wasCollected};
+  showUndoToast(wasCollected?'Marked missing':'Marked collected');
+  // Check set completion
+  if(!wasCollected){
+    const cards = SETS[si].cards;
+    const allDone = cards.every((_,i)=>sh.collected?.[si+'-'+i]);
+    if(allDone) triggerConfetti();
+  }
+  // Check album completion
+  const total = SETS.reduce((a,s)=>a+s.cards.length,0);
+  const collected = SETS.reduce((a,s,sii)=>a+s.cards.filter((_,ci2)=>sh.collected?.[sii+'-'+ci2]).length,0);
+  if(collected===total) triggerFireworks();
   scheduleSave(); renderCollect(); updateProgress();
 }
 function changeDupe(si,ci,delta){
-  if(isReadOnly()) return;
+  if(isReadOnly()||sheetLocked) return;
   const sh = currentSheet();
   const k = si+'-'+ci;
   if(!sh.dupes) sh.dupes={};
-  sh.dupes[k] = Math.max(0,(sh.dupes[k]||0)+delta);
+  const prev = sh.dupes[k]||0;
+  sh.dupes[k] = Math.max(0,prev+delta);
+  lastAction = {type:'dupe',si,ci,prev};
+  if(sh.dupes[k]===1&&delta>0) showToast('⚠️ Only 1 dupe — trade carefully!');
+  showUndoToast('Dupe '+(delta>0?'added':'removed'));
   scheduleSave(); renderCollect(); updateProgress();
 }
 
@@ -751,13 +910,17 @@ function renderCollect(){
   const fUnc = document.getElementById('f-uncollected')?.checked ?? true;
   const fCol = document.getElementById('f-collected')?.checked ?? true;
   const fDup = document.getElementById('f-dupes')?.checked ?? false;
-  const ro = isReadOnly();
+  const fGold = document.getElementById('f-gold')?.checked ?? false;
+  const fWish = document.getElementById('f-wishlist')?.checked ?? false;
+  const ro = isReadOnly() || sheetLocked;
 
   SETS.forEach((set,si)=>{
     const cards = set.cards;
     const collectedCount = cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
     const pct = Math.round(collectedCount/cards.length*100);
-    const block = document.createElement('div'); block.className='set-block';
+    const missing = cards.filter((_,ci)=>!sh.collected?.[si+'-'+ci]).length;
+    const closeToComplete = missing>0&&missing<=2;
+    const block = document.createElement('div'); block.className='set-block'+(closeToComplete?' close-to-complete almost-done':'');
     const hdr = document.createElement('div'); hdr.className='set-header';
     hdr.innerHTML=`<span class="set-chevron open" id="chev-${si}">▶</span>
       <span class="set-title">Set ${si+1}: ${set.name}</span>
@@ -778,12 +941,15 @@ function renderCollect(){
       const k=si+'-'+ci;
       const collected=!!sh.collected?.[k];
       const dupes=sh.dupes?.[k]||0;
-      const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc);
+      const isWishlist = !!wishlistCards[si+'-'+ci];
+      const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc)&&(fGold?c[2]:true)&&(fWish?isWishlist:true);
       if(!show) return;
       const card=document.createElement('div');
-      card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'');
+      card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'')+(isWL?' wishlist':'');
       const stars='★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]));
+      const isWL = !!wishlistCards[si+'-'+ci];
       card.innerHTML=`${c[2]?'<span class="gold-badge">GOLD</span>':''}
+        ${isWL?'<span class="wishlist-pin">❤️</span>':''}
         <div class="card-name">${c[0]}</div>
         <div class="card-stars">${stars}</div>
         ${!ro?`<div class="card-dupe-row">
@@ -793,6 +959,7 @@ function renderCollect(){
           ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]*(c[2]?2:1)}⭐)</span>`:''}
         </div>`:`<div class="card-dupe-row"><span class="dupe-count">${dupes>0?'×'+dupes+' dupe':''}</span></div>`}`;
       if(!ro) card.onclick=()=>toggleCollect(si,ci);
+      if(!ro) card.oncontextmenu=(e)=>{e.preventDefault();showCardContextMenu(e,si,ci,c,collected,isWL,dupes);};
       grid.appendChild(card);
     });
     if(!grid.children.length){ const em=document.createElement('div'); em.className='empty-msg'; em.style.padding='10px 14px'; em.textContent='No cards match filter.'; grid.appendChild(em); }
@@ -1105,12 +1272,436 @@ function shareDupeList(){
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Dupe list copied!')).catch(()=>showToast('Copy failed'));
 }
 
+// ── UNDO ──
+function showUndoToast(msg){
+  const t=document.getElementById('undo-toast');
+  document.getElementById('undo-msg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(window._undoTimer);
+  window._undoTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+function doUndo(){
+  if(!lastAction) return;
+  const sh=currentSheet();
+  const k=lastAction.si+'-'+lastAction.ci;
+  if(lastAction.type==='collect'){
+    if(!sh.collected) sh.collected={};
+    sh.collected[k]=lastAction.prev;
+  } else if(lastAction.type==='dupe'){
+    if(!sh.dupes) sh.dupes={};
+    sh.dupes[k]=lastAction.prev;
+  }
+  lastAction=null;
+  document.getElementById('undo-toast').classList.remove('show');
+  scheduleSave(); renderCollect(); updateProgress();
+  showToast('Undone!');
+}
+
+// ── CONFETTI / FIREWORKS ──
+function triggerConfetti(){
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  canvas.style.display='block';
+  const ctx=canvas.getContext('2d');
+  const particles=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width, y:-10,
+    vx:(Math.random()-0.5)*6, vy:Math.random()*4+2,
+    color:['#FED400','#FF6B35','#4CAF50','#2196F3','#E91E63','#FFB300'][Math.floor(Math.random()*6)],
+    size:Math.random()*8+4, rot:Math.random()*360, rotV:(Math.random()-0.5)*10
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.rot+=p.rotV;
+    });
+    frame++;
+    if(frame<180) requestAnimationFrame(draw);
+    else canvas.style.display='none';
+  }
+  draw();
+  showToast('🎉 Set Complete!');
+}
+function triggerFireworks(){
+  triggerConfetti();
+  setTimeout(()=>{ showToast("🎆 ALBUM COMPLETE! D'oh-mazing!"); },500);
+}
+
+// ── WISHLIST ──
+function toggleWishlist(si,ci){
+  const k=si+'-'+ci;
+  wishlistCards[k]=!wishlistCards[k];
+  if(!wishlistCards[k]) delete wishlistCards[k];
+  try{localStorage.setItem('simpsons-wishlist',JSON.stringify(wishlistCards));}catch(e){}
+  renderCollect();
+}
+function loadWishlist(){
+  try{const w=localStorage.getItem('simpsons-wishlist');if(w)wishlistCards=JSON.parse(w);}catch(e){}
+}
+
+// ── RIGHT CLICK CONTEXT MENU ──
+let ctxMenu=null;
+function showCardContextMenu(e,si,ci,c,collected,isWL,dupes){
+  if(ctxMenu) ctxMenu.remove();
+  const menu=document.createElement('div');
+  menu.style.cssText=`position:fixed;top:${Math.min(e.clientY,window.innerHeight-200)}px;left:${Math.min(e.clientX,window.innerWidth-180)}px;background:var(--card-bg);border:2px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:500;min-width:170px;overflow:hidden;`;
+  const items=[
+    {label:collected?'❌ Mark Missing':'✅ Mark Collected',fn:()=>toggleCollect(si,ci)},
+    {label:isWL?'💔 Remove Wishlist':'❤️ Add to Wishlist',fn:()=>toggleWishlist(si,ci)},
+    {label:'➕ Add Dupe',fn:()=>changeDupe(si,ci,1)},
+    {label:'➖ Remove Dupe',fn:()=>changeDupe(si,ci,-1),disabled:dupes<1},
+    {label:'👥 Who Has This?',fn:()=>{ctxMenu?.remove();showWhoHas(si,ci,c);}},
+    {label:'🔍 Who Needs This?',fn:()=>{ctxMenu?.remove();showWhoNeeds(si,ci,c);}},
+  ];
+  items.forEach(item=>{
+    const div=document.createElement('div');
+    div.style.cssText=`padding:9px 14px;cursor:${item.disabled?'default':'pointer'};font-size:.84rem;color:${item.disabled?'var(--text-muted)':'var(--text)'};border-bottom:1px solid var(--border);`;
+    div.textContent=item.label;
+    if(!item.disabled) div.onclick=()=>{item.fn();ctxMenu?.remove();ctxMenu=null;};
+    div.onmouseenter=()=>{if(!item.disabled)div.style.background='var(--yellow-light)';};
+    div.onmouseleave=()=>div.style.background='';
+    menu.appendChild(div);
+  });
+  document.body.appendChild(menu);
+  ctxMenu=menu;
+  setTimeout(()=>document.addEventListener('click',()=>{ctxMenu?.remove();ctxMenu=null;},{once:true}),0);
+}
+
+// ── WHO HAS / WHO NEEDS ──
+function showWhoPopup(title, rows){
+  const old=document.getElementById('who-popup');
+  if(old) old.remove();
+  const popup=document.createElement('div');
+  popup.className='who-popup'; popup.id='who-popup';
+  popup.innerHTML=`<div class="who-popup-inner">
+    <h3>${title}</h3>
+    ${rows.length?rows.map(r=>`<div class="who-row"><span class="who-name">${r.name}</span><span class="who-qty">${r.qty}</span></div>`).join(''):'<div class="who-empty">Nobody in your group!</div>'}
+    <div style="text-align:right;margin-top:10px;"><button class="btn-sm" onclick="document.getElementById('who-popup').remove()">Close</button></div>
+  </div>`;
+  popup.onclick=e=>{if(e.target===popup)popup.remove();};
+  document.body.appendChild(popup);
+}
+function showWhoHas(si,ci,c){
+  const k=si+'-'+ci;
+  const rows=[];
+  Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
+    if(uid===currentUser?.id) return;
+    const name=sheets[0]?.display_name||uid.slice(0,8);
+    const qty=sheets.reduce((a,sh)=>a+(sh.dupes?.[k]||0),0);
+    if(qty>0) rows.push({name,qty:'×'+qty+' dupe'+(qty>1?'s':'')});
+  });
+  showWhoPopup('👥 Who has "'+c[0]+'" as a dupe?',rows);
+}
+function showWhoNeeds(si,ci,c){
+  const k=si+'-'+ci;
+  const rows=[];
+  Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
+    if(uid===currentUser?.id) return;
+    const name=sheets[0]?.display_name||uid.slice(0,8);
+    const needs=sheets.some(sh=>!sh.collected?.[k]);
+    if(needs) rows.push({name,qty:'Needs it'});
+  });
+  showWhoPopup('🔍 Who needs "'+c[0]+'"?',rows);
+}
+
+// ── TRADE MATCH ALERT ──
+function checkTradeMatches(){
+  const sh=currentSheet();
+  let matches=0;
+  SETS.forEach((set,si)=>{
+    set.cards.forEach((c,ci)=>{
+      const k=si+'-'+ci;
+      if(sh.collected?.[k]) return;
+      Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
+        if(uid===currentUser?.id) return;
+        const hasIt=sheets.some(s=>(s.dupes?.[k]||0)>0);
+        if(hasIt) matches++;
+      });
+    });
+  });
+  const banner=document.getElementById('trade-alert-banner');
+  const msg=document.getElementById('trade-alert-msg');
+  if(matches>0){
+    banner.style.display='block';
+    msg.textContent=matches+' card'+(matches>1?'s':'')+' you need are available from group members — click to view Needs tab';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+// ── LEADERBOARD ──
+function renderLeaderboard(){
+  const cont=document.getElementById('tab-leaderboard');
+  cont.innerHTML='<div class="section-title">🏆 Leaderboard</div>';
+  const entries=[];
+  const totalCards=SETS.reduce((a,s)=>a+s.cards.length,0);
+  Object.entries(allUsersSheets).forEach(([uid,sheets])=>{
+    const name=sheets[0]?.display_name||uid.slice(0,8);
+    const isMe=uid===currentUser?.id;
+    let collected=0,vault=0,gold=0,dupeCount=0;
+    sheets.forEach(sh=>{
+      SETS.forEach((set,si)=>set.cards.forEach((c,ci)=>{
+        const k=si+'-'+ci;
+        if(sh.collected?.[k]){collected++;if(c[2])gold++;}
+        const d=sh.dupes?.[k]||0;
+        if(d>0){vault+=d*c[1]*(c[2]?2:1);dupeCount+=d;}
+      }));
+    });
+    const pct=Math.round(collected/totalCards*100);
+    entries.push({name,isMe,collected,pct,vault,gold,dupeCount,uid});
+  });
+  entries.sort((a,b)=>b.pct-a.pct);
+  const rankEmoji=['🥇','🥈','🥉'];
+  entries.forEach((e,i)=>{
+    const badges=[];
+    if(i===0) badges.push({label:'👑 Leader',color:'#FED400'});
+    if(e.gold===Math.max(...entries.map(x=>x.gold))&&e.gold>0) badges.push({label:'⭐ Gold Hunter',color:'#FFB300'});
+    if(e.vault===Math.max(...entries.map(x=>x.vault))&&e.vault>0) badges.push({label:'💰 Vault King',color:'#4CAF50'});
+    if(e.pct===100) badges.push({label:'🎆 Complete!',color:'#E91E63'});
+    const row=document.createElement('div');
+    row.className='lb-row'+(e.isMe?' close-to-complete':'');
+    row.innerHTML=`<div class="lb-rank">${rankEmoji[i]||'#'+(i+1)}</div>
+      <div style="flex:1;">
+        <div class="lb-name">${e.name}${e.isMe?' (You)':''}</div>
+        <div class="lb-badges">${badges.map(b=>`<span class="lb-badge" style="background:${b.color}">${b.label}</span>`).join('')}</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${e.pct}%"></div></div>
+      </div>
+      <div class="lb-stats">
+        <div>${e.pct}% (${e.collected}/${totalCards})</div>
+        <div>⭐ Gold: ${e.gold}</div>
+        <div>💰 Vault: ${e.vault}</div>
+      </div>`;
+    row.onclick=()=>viewTracker(e.uid,e.name,allUsersSheets[e.uid]||[]);
+    cont.appendChild(row);
+  });
+  if(!entries.length) cont.innerHTML+='<div class="empty-msg">No players yet.</div>';
+  // Group stats
+  const totalCollected=entries.reduce((a,e)=>a+e.collected,0);
+  const totalDupes=entries.reduce((a,e)=>a+e.dupeCount,0);
+  const needCounts={};
+  SETS.forEach((set,si)=>set.cards.forEach((c,ci)=>{
+    const k=si+'-'+ci;
+    let n=0;
+    Object.values(allUsersSheets).forEach(sheets=>sheets.forEach(sh=>{if(!sh.collected?.[k])n++;}));
+    if(n>0) needCounts[c[0]]=(needCounts[c[0]]||0)+n;
+  }));
+  const mostNeeded=Object.entries(needCounts).sort((a,b)=>b[1]-a[1])[0];
+  const stats=document.createElement('div');
+  stats.className='needs-block';
+  stats.style.marginTop='16px';
+  stats.innerHTML=`<div class="needs-tier">📊 Group Stats</div>
+    <div style="font-size:.85rem;line-height:2;">
+      <div>🃏 Total collected across group: <b>${totalCollected}</b></div>
+      <div>🔄 Total tradeable dupes: <b>${totalDupes}</b></div>
+      ${mostNeeded?`<div>🔥 Most needed card: <b>${mostNeeded[0]}</b> (${mostNeeded[1]} people need it)</div>`:''}
+    </div>`;
+  cont.appendChild(stats);
+}
+
+// ── TRADE COOLDOWN ──
+function loadCooldown(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('simpsons-cooldown')||'{}');
+    const today=new Date().toDateString();
+    if(saved.date===today) cooldownCount=saved.count||0;
+    else { cooldownCount=0; saveCooldown(); }
+  }catch(e){}
+}
+function saveCooldown(){
+  try{localStorage.setItem('simpsons-cooldown',JSON.stringify({date:new Date().toDateString(),count:cooldownCount}));}catch(e){}
+}
+function changeCooldown(delta){
+  cooldownCount=Math.max(0,Math.min(25,cooldownCount+delta));
+  saveCooldown();
+  renderSettings();
+  if(cooldownCount>=25) showToast('⚠️ Daily trade limit reached!');
+}
+
+// ── LOCK SHEET ──
+function toggleLock(){
+  sheetLocked=!sheetLocked;
+  document.getElementById('locked-banner').style.display=sheetLocked?'block':'none';
+  renderSettings();
+  renderCollect();
+}
+
+// ── DELETE SHEET ──
+async function deleteCurrentSheet(){
+  if(isReadOnly()) return;
+  const sh=currentSheet();
+  if(!sh.id){showToast('Nothing to delete.');return;}
+  if(mySheets.length<=1){showToast('Cannot delete your only sheet!');return;}
+  if(!confirm('Delete sheet "'+sh.account_name+'"? This cannot be undone.')) return;
+  const {error}=await supa.from('sheets').delete().eq('id',sh.id);
+  if(error){showToast('Error deleting sheet.');return;}
+  mySheets.splice(currentSheetIdx,1);
+  currentSheetIdx=Math.max(0,currentSheetIdx-1);
+  renderSheets();renderAll();
+  showToast('Sheet deleted.');
+}
+
+// ── PRE-FORMATTED MESSAGE ──
+function generateShareMessage(){
+  const sh=currentSheet();
+  const name=mySheets[0]?.display_name||currentUser?.email||'Me';
+  const needs=[],dupesList=[];
+  SETS.forEach((set,si)=>set.cards.forEach((c,ci)=>{
+    const k=si+'-'+ci;
+    if(!sh.collected?.[k]&&c[1]>=4) needs.push(c[0]+(c[2]?'⭐':''));
+    const d=sh.dupes?.[k]||0;
+    if(d>0&&c[1]>=4) dupesList.push(c[0]+(c[2]?'⭐':'')+' x'+d);
+  }));
+  const msg=[
+    '🍩 '+name+"'s Sticker Update",
+    '',
+    '🔍 NEEDS (4★+):',
+    ...needs.map(n=>'  • '+n),
+    '',
+    '🔄 DUPES (4★+):',
+    ...dupesList.map(d=>'  • '+d),
+    '',
+    '📊 Progress: '+document.getElementById('prog-label')?.textContent
+  ].join('\n');
+  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied! Paste into Discord/WhatsApp')).catch(()=>showToast('Copy failed'));
+}
+
+// ── SETTINGS TAB ──
+function renderSettings(){
+  const cont=document.getElementById('tab-settings');
+  const themes=[
+    {id:'',label:'☀️ Light'},
+    {id:'dark',label:'🌙 Dark'},
+    {id:'theme-simpsons',label:'🍩 Simpsons'},
+  ];
+  const currentTheme=document.body.classList.contains('theme-simpsons')?'theme-simpsons':document.body.classList.contains('dark')?'dark':'';
+  const swatches=['#FED400','#FF6B35','#4CAF50','#2196F3','#E91E63','#9C27B0','#00BCD4'];
+  cont.innerHTML=`<div class="section-title">⚙️ Settings</div>
+  <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🎨 Appearance</div>
+    <div class="settings-row">
+      <div><div class="settings-label">Theme</div></div>
+      <div style="display:flex;gap:6px;">
+        ${themes.map(t=>`<button class="size-btn${currentTheme===t.id?' active':''}" onclick="setTheme('${t.id}')">${t.label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Card Size</div></div>
+      <div class="size-btns">
+        <button class="size-btn${cardSize==='compact'?' active':''}" onclick="setCardSize('compact')">Compact</button>
+        <button class="size-btn${cardSize==='normal'?' active':''}" onclick="setCardSize('normal')">Normal</button>
+        <button class="size-btn${cardSize==='large'?' active':''}" onclick="setCardSize('large')">Large</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Card Layout</div></div>
+      <div class="size-btns">
+        <button class="size-btn${!listView?' active':''}" onclick="setListView(false)">Grid</button>
+        <button class="size-btn${listView?' active':''}" onclick="setListView(true)">List</button>
+      </div>
+    </div>
+  </div>
+  <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🃏 Sheet</div>
+    <div class="settings-row">
+      <div><div class="settings-label">Lock Sheet</div><div class="settings-desc">Prevent accidental edits</div></div>
+      <label class="toggle-switch"><input type="checkbox" ${sheetLocked?'checked':''} onchange="toggleLock()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Delete Current Sheet</div><div class="settings-desc">Permanently removes this sheet</div></div>
+      <button class="btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteCurrentSheet()">Delete</button>
+    </div>
+  </div>
+  <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🔄 Trade Cooldown</div>
+    <div class="cooldown-wrap">
+      <div>
+        <div class="cooldown-label">Trades today</div>
+        <div class="cooldown-reset" id="cooldown-reset-label"></div>
+      </div>
+      <button class="cooldown-btn" onclick="changeCooldown(-1)">−</button>
+      <span class="cooldown-count">${cooldownCount}/25</span>
+      <button class="cooldown-btn" onclick="changeCooldown(1)">+</button>
+    </div>
+  </div>
+  <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">📤 Share</div>
+    <div class="settings-row">
+      <div><div class="settings-label">Discord/WhatsApp Message</div><div class="settings-desc">Copy your needs & dupes (4★+) as a formatted message</div></div>
+      <button class="btn-sm" onclick="generateShareMessage()">Copy</button>
+    </div>
+  </div>`;
+  // Cooldown reset time
+  const now=new Date();
+  const midnight=new Date(now); midnight.setHours(24,0,0,0);
+  const diff=midnight-now;
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
+  const lbl=document.getElementById('cooldown-reset-label');
+  if(lbl) lbl.textContent='Resets in '+h+'h '+m+'m';
+}
+
+// ── THEME ──
+function setTheme(id){
+  document.body.classList.remove('dark','theme-simpsons');
+  if(id==='dark') document.body.classList.add('dark');
+  else if(id==='theme-simpsons') document.body.classList.add('theme-simpsons');
+  document.getElementById('dark-toggle').textContent=id==='dark'?'☀️':'🌙';
+  const dt2=document.getElementById('dark-toggle2'); if(dt2) dt2.textContent=id==='dark'?'☀️':'🌙';
+  try{localStorage.setItem('simpsons-theme',id);}catch(e){}
+  if(activeTab==='settings') renderSettings();
+}
+function loadTheme(){
+  try{
+    const t=localStorage.getItem('simpsons-theme')||'';
+    setTheme(t);
+  }catch(e){}
+}
+
+// ── CARD SIZE ──
+function setCardSize(size){
+  cardSize=size;
+  document.body.classList.remove('cards-compact','cards-large');
+  if(size==='compact') document.body.classList.add('cards-compact');
+  if(size==='large') document.body.classList.add('cards-large');
+  try{localStorage.setItem('simpsons-cardsize',size);}catch(e){}
+  renderCollect();
+  if(activeTab==='settings') renderSettings();
+}
+function loadCardSize(){
+  try{const s=localStorage.getItem('simpsons-cardsize')||'normal';setCardSize(s);}catch(e){}
+}
+
+// ── LIST VIEW ──
+function setListView(v){
+  listView=v;
+  document.body.classList.toggle('list-view',v);
+  try{localStorage.setItem('simpsons-listview',v?'1':'0');}catch(e){}
+  renderCollect();
+  if(activeTab==='settings') renderSettings();
+}
+function loadListView(){
+  try{const v=localStorage.getItem('simpsons-listview')==='1';setListView(v);}catch(e){}
+}
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key==='z'&&(e.ctrlKey||e.metaKey)){e.preventDefault();doUndo();}
+  if(e.key==='1') switchTab('collect',document.querySelectorAll('.tab-btn')[0]);
+  if(e.key==='2') switchTab('needs',document.querySelectorAll('.tab-btn')[1]);
+  if(e.key==='3') switchTab('trade',document.querySelectorAll('.tab-btn')[2]);
+  if(e.key==='4') switchTab('leaderboard',document.querySelectorAll('.tab-btn')[7]);
+  if(e.key==='5') switchTab('settings',document.querySelectorAll('.tab-btn')[8]);
+  if(e.key==='e') expandAll();
+  if(e.key==='c'&&!e.ctrlKey) collapseAll();
+});
+
 // ── DARK MODE ──
 function toggleDark(){
-  const on=document.body.classList.toggle('dark');
-  document.getElementById('dark-toggle').textContent=on?'☀️':'🌙';
-  const dt2=document.getElementById('dark-toggle2'); if(dt2) dt2.textContent=on?'☀️':'🌙';
-  try{localStorage.setItem('simpsons-dark',on?'1':'0');}catch(e){}
+  const isDark=document.body.classList.contains('dark');
+  setTheme(isDark?'':'dark');
 }
 
 // ── MODALS ──
@@ -1124,7 +1715,6 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 // ── BOOT ──
 window.addEventListener('scroll',()=>{ document.getElementById('back-to-top').classList.toggle('visible',window.scrollY>300); });
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); }));
-try{ if(localStorage.getItem('simpsons-dark')==='1'){ document.body.classList.add('dark'); document.getElementById('dark-toggle').textContent='☀️'; } }catch(e){}
 init();
 </script>
 </body>
