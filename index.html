@@ -113,20 +113,22 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;mi
 
 /* SETS */
 .set-block{background:var(--card-bg);border:2px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
-.set-header{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;text-align:left;}
-.set-header:hover .set-header-bg{opacity:0.5!important;}
-.set-title{font-weight:700;font-size:.92rem;flex:1;}
-.set-prog-wrap{display:flex;align-items:center;gap:6px;}
+.set-header{display:flex;align-items:center;cursor:pointer;user-select:none;position:relative;overflow:hidden;min-height:36px;border-radius:10px 10px 0 0;}
+.set-header-bg{position:absolute;inset:0;background:var(--card-bg);z-index:0;}
+.set-header-fill{position:absolute;top:0;left:0;height:100%;z-index:1;transition:width .4s ease,background .4s ease;opacity:0.5;}
+.set-header-content{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 14px;gap:10px;}
+.set-title{font-weight:700;font-size:.92rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.set-prog-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .set-prog-track{display:none;}
 .set-prog-fill{display:none;}
-.set-prog-label{font-size:.78rem;font-weight:700;color:var(--text-muted);}
-.set-header{position:relative;overflow:hidden;}
-.set-header-bg{position:absolute;left:0;top:0;height:100%;border-radius:0;transition:width .5s cubic-bezier(.4,0,.2,1),background .5s;z-index:0;pointer-events:none;}
-.set-header>*{position:relative;z-index:1;}
+.set-prog-label{font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap;}
+.set-progress-bar{display:none;}
+.set-progress-fill{display:none;}
 .set-chevron{font-size:.78rem;color:var(--text-muted);transition:transform .2s;}
 .set-chevron.open{transform:rotate(90deg);}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;padding:10px 14px 14px;}
-.card-item{border:2px solid var(--border);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;background:var(--bg);}
+.card-item{border:2px solid var(--border);border-radius:9px;padding:8px 10px;cursor:pointer;transition:background .3s,border-color .3s,transform .15s;position:relative;background:var(--bg);}
+.card-item:active{transform:scale(0.95);}
 .card-item.collected{background:#b8f0b8;border-color:#2e7d32;box-shadow:inset 0 0 0 1px #2e7d3244;}
 .card-item.collected .card-name{color:#1b5e20;}
 body.dark .card-item.collected{background:#1a3a1a;border-color:#4caf50;}
@@ -895,12 +897,23 @@ async function confirmSheetName(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){ updateProgress(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); checkTradeMatches(); }
+function renderAll(){ updateProgress(); checkTradeMatches(); renderCollect(); renderNeeds(); renderTrade(); renderCompare(); renderSearch(''); }
 
 function updateProgress(){
   const sh = currentSheet();
   let total=0, collected=0, vault=0;
-  SETS.forEach((set,si)=>{ set.cards.forEach((c,ci)=>{ total++; const k=si+'-'+ci; if(sh.collected?.[k]) collected++; const d=sh.dupes?.[k]||0; if(d>0) vault+=d*c[1]*(c[2]?2:1); }); });
+  SETS.forEach((set,si)=>{
+    set.cards.forEach((c,ci)=>{ total++; const k=si+'-'+ci; if(sh.collected?.[k]) collected++; const d=sh.dupes?.[k]||0; if(d>0) vault+=d*c[1]*(c[2]?2:1); });
+    const setCollected=set.cards.filter((_,ci)=>sh.collected?.[si+'-'+ci]).length;
+    const setPct=Math.round(setCollected/set.cards.length*100);
+    const t=setPct/100;
+    const r=Math.round(0x86+(0x16-0x86)*t), g=Math.round(0xef+(0xa3-0xef)*t), b=Math.round(0xac+(0x4a-0xac)*t);
+    const col=setPct===0?'transparent':`rgb(${r},${g},${b})`;
+    const fillEl=document.getElementById('set-fill-'+si);
+    if(fillEl){fillEl.style.width=setPct+'%';fillEl.style.background=col;}
+    const countEl=document.getElementById('set-count-'+si);
+    if(countEl) countEl.textContent=setCollected+'/'+set.cards.length;
+  });
   document.getElementById('prog-fill').style.width=(total?Math.round(collected/total*100):0)+'%';
   document.getElementById('prog-label').textContent=collected+' / '+total;
   document.getElementById('vault-stars').textContent=vault;
@@ -980,18 +993,34 @@ function renderCollect(){
       fillColor = `rgb(${r},${g},${b})`;
     }
     const hdr = document.createElement('div'); hdr.className='set-header';
-    hdr.innerHTML=`<div class="set-header-bg" style="width:100%;background:${pct>0?fillColor:'transparent'};opacity:${pct>0?0.45:0};transition:opacity .4s,background .4s;"></div>
-      <span class="set-chevron open" id="chev-${si}">▶</span>
-      <span class="set-title">Set ${si+1}: ${set.name}</span>
-      <div class="set-prog-wrap">
-        <span class="set-prog-label">${collectedCount}/${cards.length}</span>
-      </div>`;
+    const hdrBg = document.createElement('div'); hdrBg.className='set-header-bg';
+    const hdrFill = document.createElement('div'); hdrFill.className='set-header-fill';
+    hdrFill.id='set-fill-'+si;
+    hdrFill.style.width=pct+'%';
+    hdrFill.style.background=pct===0?'transparent':fillColor;
+    const hdrContent = document.createElement('div'); hdrContent.className='set-header-content';
+    hdrContent.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="set-chevron open" id="chev-${si}">▶</span>
+        <span class="set-title">Set ${si+1}: ${set.name}</span>
+      </div>
+      <span class="set-prog-label">${collectedCount}/${cards.length}</span>`;
+    hdr.appendChild(hdrBg);
+    hdr.appendChild(hdrFill);
+    hdr.appendChild(hdrContent);
     hdr.onclick=()=>{
       const g=document.getElementById('grid-'+si);
       const ch=document.getElementById('chev-'+si);
       const open=g.style.display!=='none';
       g.style.display=open?'none':'grid';
       ch.classList.toggle('open',!open);
+    };
+    // Update fill dynamically when progress changes
+    hdr._updateFill=(p,col)=>{
+      hdrFill.style.width=p+'%';
+      hdrFill.style.background=p===0?'transparent':col;
+      hdrContent.querySelector('.set-prog-label').textContent=
+        hdrContent.querySelector('.set-prog-label').textContent;
     };
     block.appendChild(hdr);
     const grid = document.createElement('div'); grid.className='card-grid'; grid.id='grid-'+si;
@@ -1017,8 +1046,6 @@ function renderCollect(){
           ${dupes>0?`<span class="vault-badge">(+${dupes*c[1]*(c[2]?2:1)}⭐)</span>`:''}
         </div>`:`<div class="card-dupe-row"><span class="dupe-count">${dupes>0?'×'+dupes+' dupe':''}</span></div>`}`;
       if(!ro) card.onclick=()=>{
-    card.classList.add('flip-anim');
-    card.addEventListener('animationend',()=>card.classList.remove('flip-anim'),{once:true});
     toggleCollect(si,ci);
   };
       if(!ro) card.oncontextmenu=(e)=>{e.preventDefault();showCardContextMenu(e,si,ci,c,collected,isWL,dupes);};
@@ -1045,8 +1072,26 @@ function renderNeeds(){
     const goldHTML = gold.length ? `<div class="needs-tier" style="margin-top:8px;">⭐ ${star}-Star GOLD (${gold.length})</div><div class="needs-chips" id="nc-g-${star}"></div>` : '';
     block.innerHTML=`<div class="needs-tier">${'★'.repeat(star)} ${star}-Star (${normal.length})</div><div class="needs-chips" id="nc-${star}"></div>${goldHTML}`;
     const chips=block.querySelector('#nc-'+star);
-    normal.forEach(c=>{ const chip=document.createElement('span'); const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); chip.className='chip'+(isMatch?' chip-trade-match':''); chip.textContent=c.name+(isMatch?' 👥':''); chip.title=isMatch?'Someone has this as a dupe!':'Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); chips.appendChild(chip); });
-    if(gold.length){ const gc=block.querySelector('#nc-g-'+star); gold.forEach(c=>{ const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); const chip=document.createElement('span'); chip.className='chip gold-chip'+(isMatch?' chip-trade-match':''); chip.textContent=c.name+' ⭐'+(isMatch?' 👥':''); chip.title=isMatch?'Someone has this as a dupe!':'Click to find in Collect tab'; chip.style.cursor='pointer'; chip.onclick=()=>jumpToCard(c.si,c.ci); gc.appendChild(chip); }); }
+    normal.forEach(c=>{ 
+      const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); 
+      const chip=document.createElement('span'); 
+      chip.className='chip'+(isMatch?' chip-trade-match':''); 
+      chip.style.cursor='pointer';
+      chip.title=isMatch?'Someone has this as a dupe! Click to find in Collect tab':'Click to find in Collect tab';
+      chip.innerHTML=c.name+(isMatch?' 👥':'')+`<span style="opacity:.45;font-size:.7em;margin-left:4px;">· Set ${c.si+1}</span>`;
+      chip.onclick=()=>jumpToCard(c.si,c.ci); 
+      chips.appendChild(chip); 
+    });
+    if(gold.length){ const gc=block.querySelector('#nc-g-'+star); gold.forEach(c=>{ 
+      const isMatch=tradeMatchKeys.has(c.si+'-'+c.ci); 
+      const chip=document.createElement('span'); 
+      chip.className='chip gold-chip'+(isMatch?' chip-trade-match':''); 
+      chip.style.cursor='pointer';
+      chip.title=isMatch?'Someone has this as a dupe! Click to find in Collect tab':'Click to find in Collect tab';
+      chip.innerHTML=c.name+' ⭐'+(isMatch?' 👥':'')+`<span style="opacity:.45;font-size:.7em;margin-left:4px;">· Set ${c.si+1}</span>`;
+      chip.onclick=()=>jumpToCard(c.si,c.ci); 
+      gc.appendChild(chip); 
+    }); }
     cont.appendChild(block);
   });
   if(Object.values(tiers).every(a=>!a.length)) cont.innerHTML+='<div style="text-align:center;padding:30px;font-size:1.2rem;">🎉 D\'oh-mazing! Album complete!</div>';
