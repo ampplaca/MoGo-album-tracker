@@ -186,6 +186,22 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
 .search-dupe-badge{font-size:.7rem;padding:2px 7px;border-radius:8px;background:var(--gold-bg);color:#7a4400;border:1px solid var(--gold);}
 .invite-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
 .invite-url{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:.82rem;margin:8px 0;font-family:monospace;}
+.import-modal{background:var(--card-bg);border-radius:14px;padding:24px;max-width:480px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.import-drop-zone{border:3px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;}
+.import-drop-zone:hover,.import-drop-zone.drag-over{border-color:var(--yellow-dark);background:var(--yellow-light);}
+.import-drop-zone input{display:none;}
+.import-preview{max-width:100%;border-radius:8px;margin-bottom:12px;max-height:300px;object-fit:contain;}
+.import-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px;}
+.import-card{border:2px solid var(--border);border-radius:9px;padding:8px;font-size:.8rem;cursor:pointer;transition:all .15s;}
+.import-card.ic-collected{background:#b8f0b8;border-color:#2e7d32;}
+.import-card.ic-missing{background:var(--bg);}
+.import-card.ic-gold{border-color:var(--gold);background:var(--gold-bg);}
+.import-card.ic-gold.ic-collected{background:#ffe082;border-color:#e65100;}
+.import-card-name{font-weight:700;margin-bottom:3px;}
+.import-card-status{font-size:.72rem;color:var(--text-muted);}
+.import-dupe-row{display:flex;align-items:center;gap:5px;margin-top:4px;}
+.import-spinner{text-align:center;padding:20px;font-size:.9rem;color:var(--text-muted);}
+.import-step{font-size:.82rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:.05em;}
 .compare-area{display:flex;flex-direction:column;gap:10px;}
 .compare-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;}
 .compare-box textarea{width:100%;min-height:80px;border:1.5px solid var(--border);border-radius:7px;padding:8px;background:var(--bg);color:var(--text);font-size:.8rem;resize:vertical;}
@@ -404,6 +420,33 @@ body.list-view .card-dupe-row{margin:0;}
     </div>
   </div>
 </div>
+<div class="modal-bg" id="import-screenshot-modal">
+  <div class="import-modal">
+    <h2 style="margin-bottom:4px;">📸 Import from Screenshot</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Upload a screenshot of a set from the game. AI will read which cards you have.</p>
+    <div class="import-step" id="import-step-label">Step 1 — Choose a set</div>
+    <select class="fancy-select" id="import-set-select" style="width:100%;margin-bottom:12px;" onchange="importSetChanged()">
+      <option value="">— Select set —</option>
+    </select>
+    <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
+      <input type="file" id="import-file-input" accept="image/*" onchange="handleImportFile(this.files[0])">
+      <div style="font-size:2rem;margin-bottom:8px;">📷</div>
+      <div style="font-weight:700;margin-bottom:4px;">Drop screenshot here or click to upload</div>
+      <div style="font-size:.78rem;color:var(--text-muted);">PNG or JPG from your game</div>
+    </div>
+    <img id="import-preview" class="import-preview" style="display:none;">
+    <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshot...</div>
+    <div id="import-results" style="display:none;">
+      <div class="import-step">Step 3 — Review & confirm</div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px;">Click any card to toggle collected status. Adjust dupes as needed. Then click Apply.</p>
+      <div class="import-result-grid" id="import-result-grid"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="modal-btn primary" id="import-apply-btn" style="display:none;" onclick="applyImportResults()">✅ Apply to Sheet</button>
+      <button class="modal-btn" onclick="closeModal('import-screenshot-modal');resetImportModal()">Close</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="confirm-modal">
   <div class="modal">
     <h2 id="confirm-title">Confirm</h2>
@@ -489,6 +532,8 @@ body.list-view .card-dupe-row{margin:0;}
   <div class="set-ctrl-row">
     <button class="set-ctrl-btn" onclick="collapseAll()">Collapse All</button>
     <button class="set-ctrl-btn" onclick="expandAll()">Expand All</button>
+    <span class="set-ctrl-sep">|</span>
+    <button class="set-ctrl-btn success" onclick="openImportScreenshot()">📸 Import Screenshot</button>
   </div>
   <div class="set-nav" id="set-nav"></div>
   <div id="trade-alert-banner" style="display:none;" class="trade-alert-banner" onclick="switchTab('needs',document.querySelectorAll('.tab-btn')[1])">
@@ -566,14 +611,14 @@ const SETS = [
   {name:"Old School Rivals", cards:[["Got Ya' Now",3,false],["Road Rage",3,false],["Evil Smirk",3,false],["Electricity",3,false],["Not the Face!",3,false],["Birthday",3,false],["Worth It!",3,false],["Excellent!",3,false],["Dog Run",3,false]]},
   {name:"Springfield Elementary", cards:[["Ralph Wiggum",3,false],["Sherri & Terri",3,false],["Milhouse Van Houten",3,false],["Nelson Muntz",3,false],["Martin Prince",3,false],["Hubert Wong",3,false],["Allison Taylor",3,false],["Uter Zorker",4,false],["Janey Powell",4,false]]},
   {name:"Exotic Animals", cards:[["Jub Jub",3,false],["Spider Pig",3,false],["Princess",3,false],["Illegal Panda",3,false],["Mr. Teeny",3,false],["Pinchy",4,false],["Screamapillar",4,false],["Stampy",4,false],["Blinky",4,true]]},
-  {name:"Simpsons in Song", cards:[["Baby on Board",3,false],["NOT ME!",3,false],["Last Requests",3,false],["We Do!",4,false],["See My Vest!",4,false],["Springfield",4,false],["Mixtape",4,false],["Sad Schmuck",4,true],["Moaning Lisa",5,false]]},
+  {name:"Simpsons in Song", cards:[["Baby on Board",3,false],["NOT ME!",3,false],["Last Requests",3,false],["We Do!",4,false],["See My Vest!",4,false],["Springfield",4,false],["Mixtape",4,false],["Sad Schmuck",4,true],["Lisa's Blues",5,false]]},
   {name:"You Steam a Good Ham!", cards:[["Unforgettable",4,false],["Roast is Ruined",4,false],["Oh Ho Ho Ho",4,false],["Just Stretching",4,false],["Steamed Hams",4,false],["Obviously Grilled",4,false],["May I See It?",5,false],["Aurora Borealis",5,true],["Northern Lights",5,true]]},
   {name:"Beloved Memes", cards:[["I'm in Danger",4,false],["Yells at Cloud",4,false],["Krumping",4,false],["Lisa Presents",4,false],["Homer in Bush",4,true],["More Coffee",4,true],["One of Us",5,false],["Stupid Sexy Flanders",5,true],["Worst Sticker Ever",6,false]]},
   {name:"The Itchy & Scratchy Show", cards:[["Run Scratchy Run",4,false],["Heads Up",4,false],["Overstuffed",4,false],["Heart Attack",4,true],["Hit and Done",4,true],["Don't Laugh!",5,false],["Washed Up",5,false],["Shutdown",5,true],["Go to Railroad",6,false]]},
-  {name:"Moe's Tavern", cards:[["Moe's",4,false],["Rags to Rags",4,false],["Love Tester",4,true],["Pickled Eggs",4,true],["Barney Gumble",5,false],["Prank Call",5,false],["Lenny Leonard",5,true],["Carl Carlson",5,true],["Flaming Moe",6,false]]},
-  {name:"Homer's Many Jobs", cards:[["Astronaut",4,false],["Safety Inspector",4,false],["Power Plant",4,true],["Monorail Conductor",5,false],["Boxer",5,false],["Grease Collector",5,false],["Rock Star",5,true],["Beer Baron",5,true],["Homer Forever",6,false]]},
-  {name:"Upper Crust", cards:[["High Society",4,true],["Snooty Club",4,true],["Caviar Dreams",5,false],["Polo Grounds",5,false],["Ritzy",5,false],["Fancy Pants",5,true],["Well Heeled",5,true],["Top Shelf",5,true],["Diamond Geezus",6,false]]},
-  {name:"Iconic Moments", cards:[["Couch Gag",4,true],["Chalkboard",4,true],["D'oh!-rchestra",5,false],["Mmm... Donuts",5,false],["Bart's Prank",5,true],["Lisa's Sax",5,true],["Homer's Dream",5,true],["Maggie's First Word",5,true],["The Simpsons Forever",6,false]]}
+  {name:"Moe's Tavern", cards:[["Moe's",4,false],["Rags to Rags",4,false],["Love Tester",4,true],["Pickled Eggs",4,true],["Barney Gumble",5,false],["Prank Call",5,false],["Lenny Leonard",5,true],["Carl Carlson",5,true],["Pool Table",6,false]]},
+  {name:"Homer's Many Jobs", cards:[["Boxer",4,false],["Sanitation",4,true],["Remote Worker",4,true],["Security",5,false],["Astronaut",5,false],["Mascot",5,false],["Monorail Conductor",5,true],["Be Sharps",5,true],["Mr. Plow",6,false]]},
+  {name:"Upper Crust", cards:[["Kent Brockman",4,true],["Mrs. Vanderbilt",4,true],["Mayor Quimby",4,false],["Rich Texan",5,false],["Mr. Burns",5,false],["Hank Scorpio",5,true],["Ranier Wolfcastle",5,true],["Drederick Tatum",5,true],["Krusty the Clown",6,false]]},
+  {name:"Iconic Moments", cards:[["Sun Blocker",4,true],["Homer's Hoagie",4,true],["Step on a Rake",5,false],["Do it For Her",5,false],["Mr. Sparkle",5,true],["Mr. Snrub",5,true],["Guy Incognito",5,true],["Gorge Jump",5,true],["Classy Marge",6,false]]}
 ];
 
 // ── STATE ──
@@ -1545,6 +1590,174 @@ function shareDupeList(){
     if(dupes.length){ lines.push(star+'★:'); dupes.forEach(d=>lines.push('  - '+d)); }
   });
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Dupe list copied!')).catch(()=>showToast('Copy failed'));
+}
+
+// ── SCREENSHOT IMPORT ──
+let importResults = [];
+let importSetIdx = null;
+
+const SUPABASE_FUNCTIONS_URL = 'https://nklxbueibntlpwfsglpm.supabase.co/functions/v1';
+
+function openImportScreenshot(){
+  if(isReadOnly()||sheetLocked){ showToast('Cannot import in read-only or locked mode'); return; }
+  resetImportModal();
+  populateImportSetSelect();
+  openModal('import-screenshot-modal');
+}
+
+function populateImportSetSelect(){
+  const sel = document.getElementById('import-set-select');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Select set —</option>';
+  SETS.forEach((s,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = 'Set '+(i+1)+': '+s.name;
+    sel.appendChild(opt);
+  });
+}
+
+function importSetChanged(){
+  const val = document.getElementById('import-set-select').value;
+  importSetIdx = val===''?null:parseInt(val);
+  document.getElementById('import-step-label').textContent = importSetIdx!==null ? 'Step 2 — Upload screenshot' : 'Step 1 — Choose a set';
+  resetImportResults();
+}
+
+function handleImportDrop(e){
+  e.preventDefault();
+  document.getElementById('import-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleImportFile(file);
+}
+
+function handleImportFile(file){
+  if(!file) return;
+  if(importSetIdx===null){ showToast('Please select a set first!'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    const dataUrl = e.target.result;
+    // Show preview
+    const preview = document.getElementById('import-preview');
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    // Get base64
+    const base64 = dataUrl.split(',')[1];
+    // Analyze
+    await analyzeScreenshot(base64);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeScreenshot(base64){
+  document.getElementById('import-spinner').style.display = 'block';
+  document.getElementById('import-results').style.display = 'none';
+  document.getElementById('import-apply-btn').style.display = 'none';
+  document.getElementById('import-step-label').textContent = 'Step 2 — Analyzing...';
+
+  const setCards = SETS[importSetIdx].cards.map(c=>c[0]);
+
+  try {
+    const {data:{session}} = await supa.auth.getSession();
+    const token = session?.access_token || '';
+
+    const resp = await fetch(SUPABASE_FUNCTIONS_URL+'/analyze-screenshot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+token,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ'
+      },
+      body: JSON.stringify({ imageBase64: base64, setCards })
+    });
+
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
+
+    importResults = data.cards;
+    renderImportResults();
+
+  } catch(err){
+    showToast('Analysis failed: '+err.message);
+    document.getElementById('import-step-label').textContent = 'Step 2 — Upload screenshot';
+  } finally {
+    document.getElementById('import-spinner').style.display = 'none';
+  }
+}
+
+function renderImportResults(){
+  const grid = document.getElementById('import-result-grid');
+  grid.innerHTML = '';
+  importResults.forEach((card,i)=>{
+    const realCard = SETS[importSetIdx].cards[i];
+    if(!realCard) return;
+    const div = document.createElement('div');
+    div.className = 'import-card'+(card.collected?' ic-collected':' ic-missing')+(realCard[2]?' ic-gold':'');
+    div.innerHTML = `
+      <div class="import-card-name">${realCard[0]}${realCard[2]?' ⭐':''}</div>
+      <div class="import-card-status">${card.collected?'✅ Collected':'❌ Missing'}</div>
+      <div class="import-dupe-row">
+        <button class="dupe-btn" onclick="changeImportDupe(${i},-1)">−</button>
+        <span class="dupe-count" id="idupe-${i}">${card.dupes||0}</span>
+        <button class="dupe-btn" onclick="changeImportDupe(${i},1)">+</button>
+        ${card.dupes>0?'<span class="vault-badge">×'+card.dupes+'</span>':''}
+      </div>`;
+    div.onclick=(e)=>{
+      if(e.target.tagName==='BUTTON') return;
+      importResults[i].collected=!importResults[i].collected;
+      renderImportResults();
+    };
+    grid.appendChild(div);
+  });
+  document.getElementById('import-results').style.display = 'block';
+  document.getElementById('import-apply-btn').style.display = 'inline-block';
+  document.getElementById('import-step-label').textContent = 'Step 3 — Review & confirm';
+}
+
+function changeImportDupe(i, delta){
+  importResults[i].dupes = Math.max(0,(importResults[i].dupes||0)+delta);
+  const el = document.getElementById('idupe-'+i);
+  if(el) el.textContent = importResults[i].dupes;
+}
+
+function applyImportResults(){
+  if(importSetIdx===null||!importResults.length) return;
+  const sheetRef = currentSheets()[currentSheetIdx];
+  if(!sheetRef) return;
+  if(!sheetRef.collected) sheetRef.collected={};
+  if(!sheetRef.dupes) sheetRef.dupes={};
+
+  importResults.forEach((card,ci)=>{
+    const k = importSetIdx+'-'+ci;
+    if(card.collected) sheetRef.collected[k]=true;
+    else delete sheetRef.collected[k];
+    if(card.dupes>0) sheetRef.dupes[k]=card.dupes;
+    else delete sheetRef.dupes[k];
+  });
+
+  scheduleSave(); updateProgress(); renderCollect(); buildSetNav();
+  closeModal('import-screenshot-modal');
+  resetImportModal();
+  showToast('✅ Set '+(importSetIdx+1)+' imported successfully!');
+  triggerConfetti();
+}
+
+function resetImportResults(){
+  importResults=[];
+  document.getElementById('import-results').style.display='none';
+  document.getElementById('import-apply-btn').style.display='none';
+  document.getElementById('import-preview').style.display='none';
+  document.getElementById('import-spinner').style.display='none';
+  const fi=document.getElementById('import-file-input');
+  if(fi) fi.value='';
+}
+
+function resetImportModal(){
+  importSetIdx=null;
+  resetImportResults();
+  const sel=document.getElementById('import-set-select');
+  if(sel) sel.value='';
+  document.getElementById('import-step-label').textContent='Step 1 — Choose a set';
 }
 
 // ── UNDO ──
