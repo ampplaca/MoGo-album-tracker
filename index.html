@@ -1713,6 +1713,7 @@ async function analyzeScreenshot(base64){
     localStorage.setItem('simpsons-quota', JSON.stringify({date:today, count:count+1}));
   }catch(e){}
   try {
+    console.log('hasGeminiKey at import time:', hasGeminiKey);
     if(!hasGeminiKey){ showToast('Add your Gemini API key in Settings first!'); return; }
     const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
     const setData = SETS.map(s=>s.cards.map(c=>({name:c[0],gold:c[2]})));
