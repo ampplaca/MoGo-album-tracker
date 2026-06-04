@@ -325,6 +325,8 @@ body.list-view .card-dupe-row{margin:0;}
 
 /* ── DRAG COLLECT ── */
 .card-item.drag-hover{background:var(--yellow-light)!important;border-color:var(--yellow-dark)!important;}
+.card-item.jump-highlight{animation:jumpPulse 1.5s ease 3;border-color:#e53935!important;box-shadow:0 0 0 3px #e5393566,0 0 20px #e5393544!important;}
+@keyframes jumpPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
 
 /* ── FANCY STAR CARDS ── */
 .fancy-cards-wrap{display:flex;flex-direction:column;gap:20px;padding:4px 0 20px;}
@@ -424,25 +426,22 @@ body.list-view .card-dupe-row{margin:0;}
   <div class="import-modal">
     <h2 style="margin-bottom:4px;">📸 Import from Screenshot</h2>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Upload a screenshot of a set from the game. AI will read which cards you have.</p>
-    <div class="import-step" id="import-step-label">Step 1 — Choose a set</div>
-    <select class="fancy-select" id="import-set-select" style="width:100%;margin-bottom:12px;" onchange="importSetChanged()">
-      <option value="">— Select set —</option>
-    </select>
+    <div class="import-step" id="import-step-label">Step 1 — Upload screenshots</div>
     <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
-      <input type="file" id="import-file-input" accept="image/*" onchange="handleImportFile(this.files[0])">
+      <input type="file" id="import-file-input" accept="image/*" multiple onchange="handleImportFiles(this.files)">
       <div style="font-size:2rem;margin-bottom:8px;">📷</div>
-      <div style="font-weight:700;margin-bottom:4px;">Drop screenshot here or click to upload</div>
-      <div style="font-size:.78rem;color:var(--text-muted);">PNG or JPG from your game</div>
+      <div style="font-weight:700;margin-bottom:4px;">Drop screenshots here or click to upload</div>
+      <div style="font-size:.78rem;color:var(--text-muted);">Upload multiple sets at once — AI detects the set automatically</div>
     </div>
-    <img id="import-preview" class="import-preview" style="display:none;">
-    <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshot...</div>
+    <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
+    <div id="import-progress" style="display:none;font-size:.82rem;color:var(--text-muted);text-align:center;margin-bottom:8px;"></div>
     <div id="import-results" style="display:none;">
-      <div class="import-step">Step 3 — Review & confirm</div>
-      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px;">Click any card to toggle collected status. Adjust dupes as needed. Then click Apply.</p>
-      <div class="import-result-grid" id="import-result-grid"></div>
+      <div class="import-step">Step 2 — Review & confirm</div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px;">Click any card to toggle. Adjust dupes with +/−. Then click Apply All.</p>
+      <div id="import-result-sets"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-      <button class="modal-btn primary" id="import-apply-btn" style="display:none;" onclick="applyImportResults()">✅ Apply to Sheet</button>
+      <button class="modal-btn primary" id="import-apply-btn" style="display:none;" onclick="applyAllImportResults()">✅ Apply All to Sheet</button>
       <button class="modal-btn" onclick="closeModal('import-screenshot-modal');resetImportModal()">Close</button>
     </div>
   </div>
@@ -852,11 +851,21 @@ function jumpToCard(si, ci){
     grid.style.display='grid';
     if(chev) chev.classList.add('open');
   }
-  // Scroll to it
+  // Scroll and highlight
   setTimeout(()=>{
-    const setBlock = grid?.closest('.set-block');
-    if(setBlock) setBlock.scrollIntoView({behavior:'smooth', block:'center'});
-  }, 100);
+    // Find the card element by set and card index
+    const cardEl = document.getElementById('card-'+si+'-'+ci);
+    if(cardEl){
+      cardEl.scrollIntoView({behavior:'smooth', block:'center'});
+      // Remove any existing highlight
+      document.querySelectorAll('.jump-highlight').forEach(el=>el.classList.remove('jump-highlight'));
+      cardEl.classList.add('jump-highlight');
+      cardEl.addEventListener('animationend',()=>cardEl.classList.remove('jump-highlight'),{once:true});
+    } else {
+      const setBlock = grid?.closest('.set-block');
+      if(setBlock) setBlock.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }, 150);
 }
 
 function expandAll(){
@@ -1162,6 +1171,7 @@ function renderCollect(){
       const show=(fDup?dupes>0:true)&&(collected?fCol:fUnc)&&(fGold?c[2]:true)&&(fWish?isWishlist:true)&&fStars[c[1]-1];
       if(!show) return;
       const card=document.createElement('div');
+      card.id='card-'+si+'-'+ci;
       const isWL = !!wishlistCards[si+'-'+ci];
       card.className='card-item'+(collected?' collected':'')+(c[2]?' gold-card':'')+(ro?' readonly':'')+(isWL?' wishlist':'');
       const stars='★'.repeat(c[1])+'☆'.repeat(Math.max(0,6-c[1]));
@@ -1593,171 +1603,168 @@ function shareDupeList(){
 }
 
 // ── SCREENSHOT IMPORT ──
-let importResults = [];
-let importSetIdx = null;
-
+let importAllResults = []; // [{setIdx, cards}]
 const SUPABASE_FUNCTIONS_URL = 'https://nklxbueibntlpwfsglpm.supabase.co/functions/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ';
 
 function openImportScreenshot(){
   if(isReadOnly()||sheetLocked){ showToast('Cannot import in read-only or locked mode'); return; }
   resetImportModal();
-  populateImportSetSelect();
   openModal('import-screenshot-modal');
-}
-
-function populateImportSetSelect(){
-  const sel = document.getElementById('import-set-select');
-  if(!sel) return;
-  sel.innerHTML = '<option value="">— Select set —</option>';
-  SETS.forEach((s,i)=>{
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = 'Set '+(i+1)+': '+s.name;
-    sel.appendChild(opt);
-  });
-}
-
-function importSetChanged(){
-  const val = document.getElementById('import-set-select').value;
-  importSetIdx = val===''?null:parseInt(val);
-  document.getElementById('import-step-label').textContent = importSetIdx!==null ? 'Step 2 — Upload screenshot' : 'Step 1 — Choose a set';
-  resetImportResults();
 }
 
 function handleImportDrop(e){
   e.preventDefault();
   document.getElementById('import-drop-zone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if(file) handleImportFile(file);
+  handleImportFiles(e.dataTransfer.files);
 }
 
-function handleImportFile(file){
-  if(!file) return;
-  if(importSetIdx===null){ showToast('Please select a set first!'); return; }
-  const reader = new FileReader();
-  reader.onload = async (e)=>{
-    const dataUrl = e.target.result;
-    // Show preview
-    const preview = document.getElementById('import-preview');
-    preview.src = dataUrl;
-    preview.style.display = 'block';
-    // Get base64
-    const base64 = dataUrl.split(',')[1];
-    // Analyze
-    await analyzeScreenshot(base64);
-  };
-  reader.readAsDataURL(file);
+function handleImportFiles(files){
+  if(!files||!files.length) return;
+  resetImportResults();
+  document.getElementById('import-spinner').style.display='block';
+  document.getElementById('import-step-label').textContent='Analyzing '+files.length+' screenshot'+(files.length>1?'s':'')+'...';
+  
+  // Read all files as base64 then process sequentially
+  const readers = Array.from(files).map(file=>new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>res({base64:e.target.result.split(',')[1], name:file.name});
+    r.readAsDataURL(file);
+  }));
+  
+  Promise.all(readers).then(async images=>{
+    const progress = document.getElementById('import-progress');
+    progress.style.display='block';
+    let processed=0;
+    for(const img of images){
+      progress.textContent='Processing '+( ++processed)+' of '+images.length+'...';
+      await analyzeScreenshot(img.base64);
+    }
+    document.getElementById('import-spinner').style.display='none';
+    progress.style.display='none';
+    if(importAllResults.length){
+      renderAllImportResults();
+      document.getElementById('import-step-label').textContent='Step 2 — Review & confirm';
+    } else {
+      document.getElementById('import-step-label').textContent='Step 1 — Upload screenshots';
+      showToast('No results — try again');
+    }
+  });
 }
 
 async function analyzeScreenshot(base64){
-  document.getElementById('import-spinner').style.display = 'block';
-  document.getElementById('import-results').style.display = 'none';
-  document.getElementById('import-apply-btn').style.display = 'none';
-  document.getElementById('import-step-label').textContent = 'Step 2 — Analyzing...';
-
-  const setCards = SETS[importSetIdx].cards.map(c=>c[0]);
-
   try {
     const {data:{session}} = await supa.auth.getSession();
-    const token = session?.access_token || '';
-
+    const token = session?.access_token||'';
+    // Ask Gemini to also detect the set number
+    const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
     const resp = await fetch(SUPABASE_FUNCTIONS_URL+'/analyze-screenshot', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+token,
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ'
-      },
-      body: JSON.stringify({ imageBase64: base64, setCards })
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':ANON_KEY},
+      body:JSON.stringify({imageBase64:base64, setCards:[], allSets:allSetNames, autoDetect:true})
     });
-
     const data = await resp.json();
     if(data.error) throw new Error(data.error);
-
-    importResults = data.cards;
-    renderImportResults();
-
+    if(data.setIdx!==undefined && data.cards?.length){
+      // Check if we already have results for this set, replace if so
+      const existing = importAllResults.findIndex(r=>r.setIdx===data.setIdx);
+      if(existing>=0) importAllResults[existing]={setIdx:data.setIdx, cards:data.cards};
+      else importAllResults.push({setIdx:data.setIdx, cards:data.cards});
+    }
   } catch(err){
     showToast('Analysis failed: '+err.message);
-    document.getElementById('import-step-label').textContent = 'Step 2 — Upload screenshot';
-  } finally {
-    document.getElementById('import-spinner').style.display = 'none';
   }
 }
 
-function renderImportResults(){
-  const grid = document.getElementById('import-result-grid');
-  grid.innerHTML = '';
-  importResults.forEach((card,i)=>{
-    const realCard = SETS[importSetIdx].cards[i];
-    if(!realCard) return;
-    const div = document.createElement('div');
-    div.className = 'import-card'+(card.collected?' ic-collected':' ic-missing')+(realCard[2]?' ic-gold':'');
-    div.innerHTML = `
-      <div class="import-card-name">${realCard[0]}${realCard[2]?' ⭐':''}</div>
-      <div class="import-card-status">${card.collected?'✅ Collected':'❌ Missing'}</div>
-      <div class="import-dupe-row">
-        <button class="dupe-btn" onclick="changeImportDupe(${i},-1)">−</button>
-        <span class="dupe-count" id="idupe-${i}">${card.dupes||0}</span>
-        <button class="dupe-btn" onclick="changeImportDupe(${i},1)">+</button>
-        ${card.dupes>0?'<span class="vault-badge">×'+card.dupes+'</span>':''}
-      </div>`;
-    div.onclick=(e)=>{
-      if(e.target.tagName==='BUTTON') return;
-      importResults[i].collected=!importResults[i].collected;
-      renderImportResults();
-    };
-    grid.appendChild(div);
+function renderAllImportResults(){
+  const cont = document.getElementById('import-result-sets');
+  cont.innerHTML='';
+  importAllResults.sort((a,b)=>a.setIdx-b.setIdx).forEach(({setIdx,cards})=>{
+    const set = SETS[setIdx];
+    if(!set) return;
+    const section = document.createElement('div');
+    section.style.cssText='margin-bottom:16px;border:2px solid var(--border);border-radius:10px;overflow:hidden;';
+    const hdr = document.createElement('div');
+    hdr.style.cssText='padding:8px 12px;background:var(--yellow-light);font-weight:700;font-size:.85rem;display:flex;justify-content:space-between;';
+    hdr.innerHTML=`<span>Set ${setIdx+1}: ${set.name}</span><span style="color:var(--text-muted)">${cards.filter(c=>c.collected).length}/${cards.length} collected</span>`;
+    section.appendChild(hdr);
+    const grid = document.createElement('div');
+    grid.className='import-result-grid';
+    grid.style.padding='8px';
+    cards.forEach((card,i)=>{
+      const realCard = set.cards[i];
+      if(!realCard) return;
+      const div = document.createElement('div');
+      div.className='import-card'+(card.collected?' ic-collected':' ic-missing')+(realCard[2]?' ic-gold':'');
+      div.innerHTML=`<div class="import-card-name">${realCard[0]}${realCard[2]?' ⭐':''}</div>
+        <div class="import-card-status">${card.collected?'✅':'❌'} ${card.collected?'Collected':'Missing'}</div>
+        <div class="import-dupe-row">
+          <button class="dupe-btn" onclick="event.stopPropagation();changeImportDupeMulti(${setIdx},${i},-1)">−</button>
+          <span class="dupe-count" id="idupe-${setIdx}-${i}">${card.dupes||0}</span>
+          <button class="dupe-btn" onclick="event.stopPropagation();changeImportDupeMulti(${setIdx},${i},1)">+</button>
+        </div>`;
+      div.onclick=(e)=>{
+        if(e.target.tagName==='BUTTON') return;
+        card.collected=!card.collected;
+        div.className='import-card'+(card.collected?' ic-collected':' ic-missing')+(realCard[2]?' ic-gold':'');
+        div.querySelector('.import-card-status').textContent=(card.collected?'✅':'❌')+' '+(card.collected?'Collected':'Missing');
+      };
+      grid.appendChild(div);
+    });
+    section.appendChild(grid);
+    cont.appendChild(section);
   });
-  document.getElementById('import-results').style.display = 'block';
-  document.getElementById('import-apply-btn').style.display = 'inline-block';
-  document.getElementById('import-step-label').textContent = 'Step 3 — Review & confirm';
+  document.getElementById('import-results').style.display='block';
+  document.getElementById('import-apply-btn').style.display='inline-block';
 }
 
-function changeImportDupe(i, delta){
-  importResults[i].dupes = Math.max(0,(importResults[i].dupes||0)+delta);
-  const el = document.getElementById('idupe-'+i);
-  if(el) el.textContent = importResults[i].dupes;
+function changeImportDupeMulti(si,ci,delta){
+  const entry = importAllResults.find(r=>r.setIdx===si);
+  if(!entry) return;
+  entry.cards[ci].dupes=Math.max(0,(entry.cards[ci].dupes||0)+delta);
+  const el=document.getElementById('idupe-'+si+'-'+ci);
+  if(el) el.textContent=entry.cards[ci].dupes;
 }
 
-function applyImportResults(){
-  if(importSetIdx===null||!importResults.length) return;
+function applyAllImportResults(){
+  if(!importAllResults.length) return;
   const sheetRef = currentSheets()[currentSheetIdx];
   if(!sheetRef) return;
   if(!sheetRef.collected) sheetRef.collected={};
   if(!sheetRef.dupes) sheetRef.dupes={};
-
-  importResults.forEach((card,ci)=>{
-    const k = importSetIdx+'-'+ci;
-    if(card.collected) sheetRef.collected[k]=true;
-    else delete sheetRef.collected[k];
-    if(card.dupes>0) sheetRef.dupes[k]=card.dupes;
-    else delete sheetRef.dupes[k];
+  let setsApplied=0;
+  importAllResults.forEach(({setIdx,cards})=>{
+    cards.forEach((card,ci)=>{
+      const k=setIdx+'-'+ci;
+      if(card.collected) sheetRef.collected[k]=true;
+      else delete sheetRef.collected[k];
+      if(card.dupes>0) sheetRef.dupes[k]=card.dupes;
+      else delete sheetRef.dupes[k];
+    });
+    setsApplied++;
   });
-
   scheduleSave(); updateProgress(); renderCollect(); buildSetNav();
   closeModal('import-screenshot-modal');
   resetImportModal();
-  showToast('✅ Set '+(importSetIdx+1)+' imported successfully!');
-  triggerConfetti();
+  showToast('✅ '+setsApplied+' set'+(setsApplied>1?'s':'')+' imported!');
+  if(setsApplied>0) triggerConfetti();
 }
 
 function resetImportResults(){
-  importResults=[];
+  importAllResults=[];
+  const cont=document.getElementById('import-result-sets');
+  if(cont) cont.innerHTML='';
   document.getElementById('import-results').style.display='none';
   document.getElementById('import-apply-btn').style.display='none';
-  document.getElementById('import-preview').style.display='none';
   document.getElementById('import-spinner').style.display='none';
+  document.getElementById('import-progress').style.display='none';
   const fi=document.getElementById('import-file-input');
   if(fi) fi.value='';
 }
 
 function resetImportModal(){
-  importSetIdx=null;
   resetImportResults();
-  const sel=document.getElementById('import-set-select');
-  if(sel) sel.value='';
-  document.getElementById('import-step-label').textContent='Step 1 — Choose a set';
+  document.getElementById('import-step-label').textContent='Step 1 — Upload screenshots';
 }
 
 // ── UNDO ──
