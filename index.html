@@ -1628,23 +1628,24 @@ function shareDupeList(){
 // ── SCREENSHOT IMPORT ──
 let importAllResults = []; // [{setIdx, cards}]
 const CLOUDFLARE_WORKER_URL = 'https://simpsons-vision.asdfghjklmnbvcxzqwertyuiop86.workers.dev';
-let userGeminiKey = '';
+// Gemini key is stored server-side only - we just track whether one exists
+let hasGeminiKey = false;
 async function loadGeminiKey(){
   try{
     const {data} = await supa.from('user_settings').select('gemini_key').eq('user_id', currentUser.id).single();
-    userGeminiKey = data?.gemini_key || '';
-  }catch(e){ userGeminiKey=''; }
+    hasGeminiKey = !!(data?.gemini_key);
+  }catch(e){ hasGeminiKey=false; }
 }
 async function saveGeminiKey(key){
-  userGeminiKey = key;
   try{
     await supa.from('user_settings').upsert({user_id: currentUser.id, gemini_key: key, updated_at: new Date().toISOString()});
+    hasGeminiKey = !!key;
   }catch(e){ showToast('Error saving key'); }
 }
 
 function openImportScreenshot(){
   if(isReadOnly()||sheetLocked){ showToast('Cannot import in read-only or locked mode'); return; }
-  if(!userGeminiKey){
+  if(!hasGeminiKey){
     if(confirm('You need a Gemini API key to use screenshot import.\n\nWould you like to see how to get one for free?')){
       switchTab('settings', document.querySelectorAll('.tab-btn')[8]);
       setTimeout(()=>openModal('api-help-modal'), 300);
@@ -1705,47 +1706,24 @@ async function analyzeScreenshot(base64){
     localStorage.setItem('simpsons-quota', JSON.stringify({date:today, count:count+1}));
   }catch(e){}
   try {
-    if(!userGeminiKey){ showToast('Add your Gemini API key in Settings first!'); return; }
+    if(!hasGeminiKey){ showToast('Add your Gemini API key in Settings first!'); return; }
     const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
     const setData = SETS.map(s=>s.cards.map(c=>({name:c[0],gold:c[2]})));
 
-    const prompt = `You are analyzing a Monopoly GO Simpsons sticker album screenshot.
-First identify which set this is from the "Set X/21" text at the bottom. That X minus 1 is the setIdx.
-The available sets are: ${allSetNames}
-For each card: collected=true if card has ARTWORK IMAGE and name in COLOURED BANNER at bottom, false if GREY/BEIGE with name in centre starburst. dupes=number after + in corner or 0. gold=true if gold border frame.
-Respond ONLY with JSON: {"setIdx":0,"cards":[{"name":"Marge","collected":false,"dupes":0,"gold":false},...]}
-No other text.`;
-
-    const geminiBody = {
-      contents:[{parts:[
-        {text: prompt},
-        {inline_data:{mime_type:'image/png', data:base64}}
-      ]}]
-    };
-
-    // Try gemini-2.5-flash first, fall back to gemini-2.5-flash-lite if quota hit
-    let resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`,
-      {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(geminiBody)}
-    );
-    let respData = await resp.json();
-    if(respData?.error?.code === 429){
-      console.log('2.5 Flash quota hit, trying Flash Lite...');
-      resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userGeminiKey}`,
-        {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(geminiBody)}
-      );
-      respData = await resp.json();
-    }
-    const fakeResp = { json: ()=>Promise.resolve(respData) };
-    const data = respData;
-    if(data.error) throw new Error(data.error?.message||JSON.stringify(data.error));
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const clean = rawText.replace(/```json|```/g,'').trim();
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('No JSON in Gemini response');
-    data.setIdx = JSON.parse(jsonMatch[0]).setIdx;
-    data.cards = JSON.parse(jsonMatch[0]).cards;
+    // Call Edge Function - key fetched server-side, never exposed to browser
+    const {data:{session}} = await supa.auth.getSession();
+    const token = session?.access_token||'';
+    const resp = await fetch('https://nklxbueibntlpwfsglpm.supabase.co/functions/v1/analyze-screenshot', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+token,
+        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ'
+      },
+      body:JSON.stringify({imageBase64:base64, allSets:allSetNames})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
     if(data.setIdx!==undefined && data.cards?.length){
       // Check if we already have results for this set, replace if so
       const existing = importAllResults.findIndex(r=>r.setIdx===data.setIdx);
@@ -2271,7 +2249,7 @@ function renderSettings(){
       <button class="btn-sm" onclick="openModal('api-help-modal')" style="white-space:nowrap;flex-shrink:0;">❓ Walkthrough</button>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <input id="gemini-key-input" type="password" class="modal-input" style="flex:1;margin:0;" placeholder="Paste your Gemini API key..." value="${userGeminiKey?'••••••••••••':''}">
+      <input id="gemini-key-input" type="password" class="modal-input" style="flex:1;margin:0;" placeholder="${hasGeminiKey?'Key already saved — paste new to replace':'Paste your Gemini API key...'}">
       <button class="btn-sm" onclick="saveGeminiKeyFromInput()">Save</button>
       <button class="btn-sm" onclick="clearGeminiKey()">Clear</button>
     </div>
@@ -2303,6 +2281,8 @@ function renderSettings(){
   const urlBox = document.getElementById('invite-url-box');
   if(urlBox) urlBox.value = getMyPublicUrl();
   updateGeminiKeyStatus();
+  const keyInp = document.getElementById('gemini-key-input');
+  if(keyInp) keyInp.placeholder = hasGeminiKey ? 'Key already saved — paste new to replace' : 'Paste your Gemini API key...';
   // Cooldown reset time
   const now=new Date();
   const midnight=new Date(now); midnight.setHours(24,0,0,0);
@@ -2330,7 +2310,7 @@ async function clearGeminiKey(){
 function updateGeminiKeyStatus(){
   const el = document.getElementById('gemini-key-status');
   if(!el) return;
-  if(userGeminiKey) el.innerHTML='✅ Key saved — screenshot import ready';
+  if(hasGeminiKey) el.innerHTML='✅ Key saved — screenshot import ready';
   else el.innerHTML='⚠️ No key set — screenshot import disabled';
 }
 
