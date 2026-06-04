@@ -811,6 +811,7 @@ async function afterLogin(){
   await loadAllUsersSheets();
   loadWishlist();
   loadCooldown();
+  await loadGeminiKey();
   // Load appearance settings
   try{
     const sz=localStorage.getItem('simpsons-cardsize')||'normal';
