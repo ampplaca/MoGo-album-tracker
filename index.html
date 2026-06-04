@@ -427,12 +427,12 @@ body.list-view .card-dupe-row{margin:0;}
     <h2 style="margin-bottom:4px;">📸 Import from Screenshot</h2>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Upload a screenshot of a set from the game. AI will read which cards you have.</p>
     <div class="import-step" id="import-step-label">Step 1 — Upload screenshots</div>
-    <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
-      <input type="file" id="import-file-input" accept="image/*" multiple onchange="handleImportFiles(this.files)">
+    <label class="import-drop-zone" id="import-drop-zone" for="import-file-input" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event);event.preventDefault();">
+      <input type="file" id="import-file-input" accept="image/*" multiple onchange="handleImportFiles(this.files)" style="display:none;">
       <div style="font-size:2rem;margin-bottom:8px;">📷</div>
       <div style="font-weight:700;margin-bottom:4px;">Drop screenshots here or click to upload</div>
       <div style="font-size:.78rem;color:var(--text-muted);">Upload multiple sets at once — AI detects the set automatically</div>
-    </div>
+    </label>
     <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
     <div id="import-progress" style="display:none;font-size:.82rem;color:var(--text-muted);text-align:center;margin-bottom:8px;"></div>
     <div id="import-results" style="display:none;">
@@ -1655,6 +1655,13 @@ function handleImportFiles(files){
 
 async function analyzeScreenshot(base64){
   console.log('analyzeScreenshot called, base64 length:', base64?.length);
+  // Track local quota count
+  try{
+    const saved = JSON.parse(localStorage.getItem('simpsons-quota')||'{}');
+    const today = new Date().toDateString();
+    const count = saved.date===today ? (saved.count||0) : 0;
+    localStorage.setItem('simpsons-quota', JSON.stringify({date:today, count:count+1}));
+  }catch(e){}
   try {
     const {data:{session}} = await supa.auth.getSession();
     const token = session?.access_token||'';
@@ -2178,6 +2185,11 @@ function renderSettings(){
     </div>
   </div>
   <div class="settings-panel">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">📸 Screenshot Import Quota</div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:8px;">Free tier allows <b>1,000 screenshots per day</b> across all users. Track your usage at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--yellow-dark);">aistudio.google.com/apikey</a> → select your key → View usage.</p>
+    <div style="font-size:.82rem;"><b>Today's usage:</b> <span id="quota-count">—</span> <button class="btn-sm" style="margin-left:8px;" onclick="checkQuotaUsage()">Check</button></div>
+  </div>
+  <div class="settings-panel">
     <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🔗 Group Invite Link</div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:10px;">Share this link — friends open it and automatically see your group.</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -2218,6 +2230,18 @@ function renderSettings(){
   const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
   const lbl=document.getElementById('cooldown-reset-label');
   if(lbl) lbl.textContent='Resets in '+h+'h '+m+'m';
+}
+
+// ── QUOTA ──
+function checkQuotaUsage(){
+  // We track locally how many screenshots have been processed today
+  try{
+    const saved = JSON.parse(localStorage.getItem('simpsons-quota')||'{}');
+    const today = new Date().toDateString();
+    const count = saved.date===today ? (saved.count||0) : 0;
+    const el = document.getElementById('quota-count');
+    if(el) el.textContent = count + ' / 1,000 used today (local count)';
+  }catch(e){}
 }
 
 // ── INVITE LINK ──
@@ -2337,7 +2361,7 @@ function buildSetNav(){
     btn.onclick=()=>{
       activeSetIdx=si;
       document.getElementById('set-block-'+si)?.scrollIntoView({behavior:'smooth',block:'start'});
-      document.getElementById('active-set-label').textContent='Active: Set '+(si+1)+' — '+set.name;
+      const lbl=document.getElementById('active-set-label'); if(lbl) lbl.textContent='Active: Set '+(si+1)+' — '+set.name;
     };
     nav.appendChild(btn);
   });
