@@ -1604,8 +1604,7 @@ function shareDupeList(){
 
 // ── SCREENSHOT IMPORT ──
 let importAllResults = []; // [{setIdx, cards}]
-const SUPABASE_FUNCTIONS_URL = 'https://nklxbueibntlpwfsglpm.supabase.co/functions/v1';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbHhidWVpYm50bHB3ZnNnbHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNDkyMjMsImV4cCI6MjA5NTgyNTIyM30.-LWlSb_A3W-RNgXemNpiA_mxRQMWrJtvYFOEjLvYuZQ';
+const CLOUDFLARE_WORKER_URL = 'https://simpsons-vision.asdfghjklmnbvcxzqwertyuiop86.workers.dev';
 
 function openImportScreenshot(){
   if(isReadOnly()||sheetLocked){ showToast('Cannot import in read-only or locked mode'); return; }
@@ -1663,16 +1662,12 @@ async function analyzeScreenshot(base64){
     localStorage.setItem('simpsons-quota', JSON.stringify({date:today, count:count+1}));
   }catch(e){}
   try {
-    const {data:{session}} = await supa.auth.getSession();
-    const token = session?.access_token||'';
-    console.log('Token:', token ? 'present' : 'missing');
-    // Ask Gemini to also detect the set number
+    // Build set list for AI to auto-detect which set the screenshot is
     const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
-    console.log('Calling edge function...');
-    const resp = await fetch(SUPABASE_FUNCTIONS_URL+'/analyze-screenshot', {
+    const resp = await fetch(CLOUDFLARE_WORKER_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':ANON_KEY},
-      body:JSON.stringify({imageBase64:base64, setCards:[], allSets:allSetNames, autoDetect:true})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({imageBase64:base64, allSets:allSetNames})
     });
     const data = await resp.json();
     if(data.error) throw new Error(data.error);
@@ -2184,11 +2179,7 @@ function renderSettings(){
       <button class="cooldown-btn" onclick="changeCooldown(1)">+</button>
     </div>
   </div>
-  <div class="settings-panel">
-    <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">📸 Screenshot Import Quota</div>
-    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:8px;">Free tier allows <b>1,000 screenshots per day</b> across all users. Track your usage at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--yellow-dark);">aistudio.google.com/apikey</a> → select your key → View usage.</p>
-    <div style="font-size:.82rem;"><b>Today's usage:</b> <span id="quota-count">—</span> <button class="btn-sm" style="margin-left:8px;" onclick="checkQuotaUsage()">Check</button></div>
-  </div>
+
   <div class="settings-panel">
     <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;color:var(--text-muted);text-transform:uppercase;">🔗 Group Invite Link</div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:10px;">Share this link — friends open it and automatically see your group.</p>
