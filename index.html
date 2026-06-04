@@ -1632,9 +1632,11 @@ const CLOUDFLARE_WORKER_URL = 'https://simpsons-vision.asdfghjklmnbvcxzqwertyuio
 let hasGeminiKey = false;
 async function loadGeminiKey(){
   try{
-    const {data} = await supa.from('user_settings').select('gemini_key').eq('user_id', currentUser.id).single();
+    const {data, error} = await supa.from('user_settings').select('gemini_key').eq('user_id', currentUser.id).single();
+    console.log('loadGeminiKey data:', data, 'error:', error);
     hasGeminiKey = !!(data?.gemini_key);
-  }catch(e){ hasGeminiKey=false; }
+    console.log('hasGeminiKey after load:', hasGeminiKey);
+  }catch(e){ console.error('loadGeminiKey exception:', e); hasGeminiKey=false; }
 }
 async function saveGeminiKey(key){
   try{
@@ -2254,7 +2256,7 @@ function renderSettings(){
       <button class="btn-sm" onclick="openModal('api-help-modal')" style="white-space:nowrap;flex-shrink:0;">❓ Walkthrough</button>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <input id="gemini-key-input" type="password" class="modal-input" style="flex:1;margin:0;" placeholder="${hasGeminiKey?'Key already saved — paste new to replace':'Paste your Gemini API key...'}">
+      <input id="gemini-key-input" type="text" class="modal-input" style="flex:1;margin:0;font-family:monospace;letter-spacing:.05em;" placeholder="${hasGeminiKey?'Key already saved — paste new to replace':'Paste your Gemini API key...'}">
       <button class="btn-sm" onclick="saveGeminiKeyFromInput()">Save</button>
       <button class="btn-sm" onclick="clearGeminiKey()">Clear</button>
     </div>
