@@ -453,7 +453,7 @@ body.list-view .card-dupe-row{margin:0;}
       <div style="font-weight:700;margin-bottom:4px;">Drop screenshots here</div>
       <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">or</div>
       <label for="import-file-input" class="btn-yellow" style="padding:8px 20px;font-size:.85rem;cursor:pointer;display:inline-block;border-radius:9px;">Browse Files</label>
-      <input type="file" id="import-file-input" accept="image/*" multiple style="display:none;" onchange="handleImportFiles(this.files)">
+      <input type="file" id="import-file-input" accept="image/*" multiple style="display:none;">
       <div style="font-size:.75rem;color:var(--text-muted);margin-top:8px;">Multiple sets supported — AI detects automatically</div>
     </div>
     <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
@@ -1633,11 +1633,10 @@ const CLOUDFLARE_WORKER_URL = 'https://simpsons-vision.asdfghjklmnbvcxzqwertyuio
 let hasGeminiKey = false;
 async function loadGeminiKey(){
   try{
-    const {data, error} = await supa.from('user_settings').select('gemini_key').eq('user_id', currentUser.id).single();
-    console.log('loadGeminiKey data:', data, 'error:', error);
-    hasGeminiKey = !!(data?.gemini_key);
-    console.log('hasGeminiKey after load:', hasGeminiKey);
-  }catch(e){ console.error('loadGeminiKey exception:', e); hasGeminiKey=false; }
+    // Only check if key exists - don't fetch the actual value to browser
+    const {data} = await supa.from('user_settings').select('id, user_id').eq('user_id', currentUser.id).not('gemini_key', 'is', null).single();
+    hasGeminiKey = !!data;
+  }catch(e){ hasGeminiKey=false; }
 }
 async function saveGeminiKey(key){
   try{
@@ -2519,6 +2518,7 @@ function resetSet(si){
 
 // ── BOOT ──
 window.addEventListener('scroll',()=>{ document.getElementById('back-to-top').classList.toggle('visible',window.scrollY>300); });
+document.getElementById('import-file-input').addEventListener('change', function(){ handleImportFiles(this.files); });
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); }));
 init();
 </script>
