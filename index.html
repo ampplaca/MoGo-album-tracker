@@ -1634,7 +1634,7 @@ let hasGeminiKey = false;
 async function loadGeminiKey(){
   try{
     // Only check if key exists - don't fetch the actual value to browser
-    const {data} = await supa.from('user_settings').select('id, user_id').eq('user_id', currentUser.id).not('gemini_key', 'is', null).single();
+    const {data} = await supa.from('user_settings').select('user_id').eq('user_id', currentUser.id).not('gemini_key', 'is', null).single();
     hasGeminiKey = !!data;
   }catch(e){ hasGeminiKey=false; }
 }
