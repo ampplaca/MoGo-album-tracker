@@ -448,12 +448,12 @@ body.list-view .card-dupe-row{margin:0;}
     <h2 style="margin-bottom:4px;">📸 Import from Screenshot</h2>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Upload a screenshot of a set from the game. AI will read which cards you have.</p>
     <div class="import-step" id="import-step-label">Step 1 — Upload screenshots</div>
-    <input type="file" id="import-file-input" accept="image/*" multiple style="display:none;" onchange="handleImportFiles(this.files)">
     <div class="import-drop-zone" id="import-drop-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
       <div style="font-size:2rem;margin-bottom:8px;">📷</div>
       <div style="font-weight:700;margin-bottom:4px;">Drop screenshots here</div>
       <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">or</div>
-      <button class="btn-yellow" style="padding:8px 20px;font-size:.85rem;" onclick="event.stopPropagation();document.getElementById('import-file-input').click()">Browse Files</button>
+      <label for="import-file-input" class="btn-yellow" style="padding:8px 20px;font-size:.85rem;cursor:pointer;display:inline-block;border-radius:9px;">Browse Files</label>
+      <input type="file" id="import-file-input" accept="image/*" multiple style="display:none;" onchange="handleImportFiles(this.files)">
       <div style="font-size:.75rem;color:var(--text-muted);margin-top:8px;">Multiple sets supported — AI detects automatically</div>
     </div>
     <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
@@ -1638,9 +1638,14 @@ async function loadGeminiKey(){
 }
 async function saveGeminiKey(key){
   try{
-    await supa.from('user_settings').upsert({user_id: currentUser.id, gemini_key: key, updated_at: new Date().toISOString()});
+    const {error} = await supa.from('user_settings').upsert(
+      {user_id: currentUser.id, gemini_key: key, updated_at: new Date().toISOString()},
+      {onConflict: 'user_id'}
+    );
+    if(error){ console.error('Save key error:', error); showToast('Error: '+error.message); return; }
     hasGeminiKey = !!key;
-  }catch(e){ showToast('Error saving key'); }
+    console.log('Key saved, hasGeminiKey:', hasGeminiKey);
+  }catch(e){ console.error('Save key exception:', e); showToast('Error saving key: '+e.message); }
 }
 
 function openImportScreenshot(){
