@@ -1664,10 +1664,11 @@ async function analyzeScreenshot(base64){
   try {
     // Build set list for AI to auto-detect which set the screenshot is
     const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
+    const setData = SETS.map(s=>s.cards.map(c=>({name:c[0],gold:c[2]})));
     const resp = await fetch(CLOUDFLARE_WORKER_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({imageBase64:base64, allSets:allSetNames})
+      body:JSON.stringify({imageBase64:base64, allSets:allSetNames, setData})
     });
     const data = await resp.json();
     if(data.error) throw new Error(data.error);
