@@ -1620,6 +1620,7 @@ function handleImportDrop(e){
 }
 
 function handleImportFiles(files){
+  console.log('handleImportFiles called, files:', files?.length);
   if(!files||!files.length) return;
   resetImportResults();
   document.getElementById('import-spinner').style.display='block';
@@ -1653,11 +1654,14 @@ function handleImportFiles(files){
 }
 
 async function analyzeScreenshot(base64){
+  console.log('analyzeScreenshot called, base64 length:', base64?.length);
   try {
     const {data:{session}} = await supa.auth.getSession();
     const token = session?.access_token||'';
+    console.log('Token:', token ? 'present' : 'missing');
     // Ask Gemini to also detect the set number
     const allSetNames = SETS.map((s,i)=>'Set '+(i+1)+': '+s.name).join(', ');
+    console.log('Calling edge function...');
     const resp = await fetch(SUPABASE_FUNCTIONS_URL+'/analyze-screenshot', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':ANON_KEY},
