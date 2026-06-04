@@ -1672,7 +1672,13 @@ function handleImportDrop(e){
 function handleImportFiles(files){
   console.log('handleImportFiles called, files:', files?.length);
   if(!files||!files.length) return;
-  resetImportResults();
+  // Reset results but don't clear file input (would cancel current selection)
+  importAllResults=[];
+  const cont=document.getElementById('import-result-sets'); if(cont) cont.innerHTML='';
+  document.getElementById('import-results').style.display='none';
+  document.getElementById('import-apply-btn').style.display='none';
+  document.getElementById('import-spinner').style.display='none';
+  document.getElementById('import-progress').style.display='none';
   document.getElementById('import-spinner').style.display='block';
   document.getElementById('import-step-label').textContent='Analyzing '+files.length+' screenshot'+(files.length>1?'s':'')+'...';
   
@@ -2519,7 +2525,10 @@ function resetSet(si){
 
 // ── BOOT ──
 window.addEventListener('scroll',()=>{ document.getElementById('back-to-top').classList.toggle('visible',window.scrollY>300); });
-document.getElementById('import-file-input').addEventListener('change', function(){ handleImportFiles(this.files); });
+document.getElementById('import-file-input').addEventListener('change', function(){ 
+  console.log('File input change fired, files:', this.files?.length, this.files);
+  handleImportFiles(this.files); 
+});
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); }));
 init();
 </script>
