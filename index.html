@@ -187,7 +187,7 @@ body.dark .card-item.gold-card.collected{background:#3a2800;border-color:#ff9800
 .invite-box{background:var(--card-bg);border:2px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
 .invite-url{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:.82rem;margin:8px 0;font-family:monospace;}
 .import-modal{background:var(--card-bg);border-radius:14px;padding:24px;max-width:480px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);}
-.import-drop-zone{border:3px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;}
+.import-drop-zone{border:3px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;position:relative;overflow:hidden;}
 .import-drop-zone:hover,.import-drop-zone.drag-over{border-color:var(--yellow-dark);background:var(--yellow-light);}
 .import-drop-zone input{display:none;}
 .import-preview{max-width:100%;border-radius:8px;margin-bottom:12px;max-height:300px;object-fit:contain;}
@@ -427,12 +427,12 @@ body.list-view .card-dupe-row{margin:0;}
     <h2 style="margin-bottom:4px;">📸 Import from Screenshot</h2>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Upload a screenshot of a set from the game. AI will read which cards you have.</p>
     <div class="import-step" id="import-step-label">Step 1 — Upload screenshots</div>
-    <label class="import-drop-zone" id="import-drop-zone" for="import-file-input" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event);event.preventDefault();">
-      <input type="file" id="import-file-input" accept="image/*" multiple onchange="handleImportFiles(this.files)" style="display:none;">
-      <div style="font-size:2rem;margin-bottom:8px;">📷</div>
-      <div style="font-weight:700;margin-bottom:4px;">Drop screenshots here or click to upload</div>
-      <div style="font-size:.78rem;color:var(--text-muted);">Upload multiple sets at once — AI detects the set automatically</div>
-    </label>
+    <div class="import-drop-zone" id="import-drop-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
+      <input type="file" id="import-file-input" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="handleImportFiles(this.files)">
+      <div style="font-size:2rem;margin-bottom:8px;pointer-events:none;">📷</div>
+      <div style="font-weight:700;margin-bottom:4px;pointer-events:none;">Drop screenshots here or click to upload</div>
+      <div style="font-size:.78rem;color:var(--text-muted);pointer-events:none;">Upload multiple sets at once — AI detects the set automatically</div>
+    </div>
     <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
     <div id="import-progress" style="display:none;font-size:.82rem;color:var(--text-muted);text-align:center;margin-bottom:8px;"></div>
     <div id="import-results" style="display:none;">
