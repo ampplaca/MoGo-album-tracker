@@ -458,6 +458,7 @@ body.list-view .card-dupe-row{margin:0;}
     </div>
     <div id="import-spinner" class="import-spinner" style="display:none;">🔍 Analyzing screenshots...</div>
     <div id="import-progress" style="display:none;font-size:.82rem;color:var(--text-muted);text-align:center;margin-bottom:8px;"></div>
+    <div id="import-previews" style="display:none;margin-bottom:12px;"></div>
     <div id="import-results" style="display:none;">
       <div class="import-step">Step 2 — Review & confirm</div>
       <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px;">Click any card to toggle. Adjust dupes with +/−. Then click Apply All.</p>
@@ -634,7 +635,7 @@ const SETS = [
   {name:"Springfield Elementary", cards:[["Ralph Wiggum",3,false],["Sherri & Terri",3,false],["Milhouse Van Houten",3,false],["Nelson Muntz",3,false],["Martin Prince",3,false],["Hubert Wong",3,false],["Allison Taylor",3,false],["Uter Zorker",4,false],["Janey Powell",4,false]]},
   {name:"Exotic Animals", cards:[["Jub Jub",3,false],["Spider Pig",3,false],["Princess",3,false],["Illegal Panda",3,false],["Mr. Teeny",3,false],["Pinchy",4,false],["Screamapillar",4,false],["Stampy",4,false],["Blinky",4,true]]},
   {name:"Simpsons in Song", cards:[["Baby on Board",3,false],["NOT ME!",3,false],["Last Requests",3,false],["We Do!",4,false],["See My Vest!",4,false],["Springfield",4,false],["Mixtape",4,false],["Sad Schmuck",4,true],["Lisa's Blues",5,false]]},
-  {name:"You Steam a Good Ham!", cards:[["Unforgettable",4,false],["Roast is Ruined",4,false],["Oh Ho Ho Ho",4,false],["Just Stretching",4,false],["Steamed Hams",4,false],["Obviously Grilled",4,false],["May I See It?",5,false],["Aurora Borealis",5,true],["Northern Lights",5,true]]},
+  {name:"You Steam a Good Ham!", cards:[["Unforgettable",4,false],["Roast is Ruined",4,false],["Oh Ho Ho Ho",4,false],["Just Stretching",4,false],["Steamed Hams",4,false],["Obviously Grilled",4,true],["May I See It?",5,false],["Aurora Borealis",5,false],["Northern Lights",5,true]]},
   {name:"Beloved Memes", cards:[["I'm in Danger",4,false],["Yells at Cloud",4,false],["Krumping",4,false],["Lisa Presents",4,false],["Homer in Bush",4,true],["More Coffee",4,true],["One of Us",5,false],["Stupid Sexy Flanders",5,true],["Worst Sticker Ever",6,false]]},
   {name:"The Itchy & Scratchy Show", cards:[["Run Scratchy Run",4,false],["Heads Up",4,false],["Overstuffed",4,false],["Heart Attack",4,true],["Hit and Done",4,true],["Don't Laugh!",5,false],["Washed Up",5,false],["Shutdown",5,true],["Go to Railroad",6,false]]},
   {name:"Moe's Tavern", cards:[["Moe's",4,false],["Rags to Rags",4,false],["Love Tester",4,true],["Pickled Eggs",4,true],["Barney Gumble",5,false],["Prank Call",5,false],["Lenny Leonard",5,true],["Carl Carlson",5,true],["Pool Table",6,false]]},
@@ -1679,6 +1680,8 @@ function handleImportFiles(files){
   document.getElementById('import-apply-btn').style.display='none';
   document.getElementById('import-spinner').style.display='none';
   document.getElementById('import-progress').style.display='none';
+  document.getElementById('import-previews').style.display='none';
+  document.getElementById('import-previews').innerHTML='';
   document.getElementById('import-spinner').style.display='block';
   document.getElementById('import-step-label').textContent='Analyzing '+files.length+' screenshot'+(files.length>1?'s':'')+'...';
   
@@ -1690,6 +1693,18 @@ function handleImportFiles(files){
   }));
   
   Promise.all(readers).then(async images=>{
+    // Show previews
+    const previewsEl = document.getElementById('import-previews');
+    previewsEl.style.display='flex';
+    previewsEl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;';
+    images.forEach(img=>{
+      const thumb = document.createElement('img');
+      thumb.src='data:image/png;base64,'+img.base64;
+      thumb.style.cssText='height:80px;border-radius:6px;border:2px solid var(--border);cursor:pointer;object-fit:cover;';
+      thumb.onclick=()=>{ thumb.style.height=thumb.style.height==='80px'?'250px':'80px'; };
+      thumb.title='Click to expand';
+      previewsEl.appendChild(thumb);
+    });
     const progress = document.getElementById('import-progress');
     progress.style.display='block';
     let processed=0;
